@@ -1,0 +1,24 @@
+{
+    "name": "dev-lancer/minecraft-status",
+    "type": "library",
+    "description": "",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Jakub Gniecki",
+            "email": "kubuspl@onet.eu"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "php": ">=7.4",
+        "ext-mbstring": "*",
+        "ext-json": "*",
+        "ext-iconv": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "DevLancer\\MinecraftStatus\\": "src/"
+        }
+    }
+}
