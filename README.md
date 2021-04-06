@@ -1,1 +1,1 @@
-# MinecraftStatus
+# Minecraft Status
