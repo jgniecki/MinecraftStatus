@@ -20,11 +20,6 @@ use InvalidArgumentException;
 class Query implements StatusInterface
 {
     /**
-     * @var bool
-     */
-    public static bool $requireChallenge = true;
-
-    /**
      * @var resource|null
      */
     protected $socket = null;
