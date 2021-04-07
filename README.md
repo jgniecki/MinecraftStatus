@@ -5,15 +5,15 @@ This library can installed by issuing the following command:
 ```bash
 composer require dev-lancer/minecraft-status
 ```
-### Query
-This method uses GameSpy4 protocol, and requires enabling `query` listener in your `server.properties` like this:
-
-> *enable-query=true*<br>
-> *query.port=25565*
 
 ## Example
 
 ### Query
+
+This method uses GameSpy4 protocol, and requires enabling `query` listener in your `server.properties` like this:
+
+> *enable-query=true*<br>
+> *query.port=25565*
 
 ```php
 <?php
