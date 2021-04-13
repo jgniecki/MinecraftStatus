@@ -20,6 +20,11 @@ use InvalidArgumentException;
 class Ping implements StatusInterface
 {
     /**
+     * @var string|null
+     */
+    protected ?string $encoding = null;
+
+    /**
      * @var string
      */
     protected string $host;
@@ -153,7 +158,7 @@ class Ping implements StatusInterface
                 $this->players[] = $value['name'];
         }
 
-        $this->info = $result;
+        $this->info = ($this->encoding)? (array) mb_convert_encoding($result, 'UTF-8', $this->encoding) : (array) mb_convert_encoding($result, 'UTF-8');
     }
 
     /**
@@ -265,5 +270,21 @@ class Ping implements StatusInterface
         $record = @dns_get_record( '_minecraft._tcp.' . $host, DNS_SRV );
 
         return $record[0]['target']?? null;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getEncoding(): ?string
+    {
+        return $this->encoding;
+    }
+
+    /**
+     * @param string|null $encoding
+     */
+    public function setEncoding(string $encoding): void
+    {
+        $this->encoding = $encoding;
     }
 }

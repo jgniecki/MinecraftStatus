@@ -20,6 +20,11 @@ use InvalidArgumentException;
 class Query implements StatusInterface
 {
     /**
+     * @var string|null
+     */
+    protected ?string $encoding = null;
+
+    /**
      * @var resource|null
      */
     protected $socket = null;
@@ -259,10 +264,25 @@ class Query implements StatusInterface
                 $info[$key] = $value;
         }
 
-        if (explode(".", $info['hostip'])[0] == "127")
-            $info['hostip'] = gethostbyname($this->host);
+        $info['hostip'] = gethostbyname($this->host);
 
-        $this->info = (array) mb_convert_encoding($info, 'UTF-8');
+        $this->info = ($this->encoding)? (array) mb_convert_encoding($info, 'UTF-8', $this->encoding) : (array) mb_convert_encoding($info, 'UTF-8');
         $this->players = empty($Players)? explode("\x00", $players) : [];
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getEncoding(): ?string
+    {
+        return $this->encoding;
+    }
+
+    /**
+     * @param string|null $encoding
+     */
+    public function setEncoding(string $encoding): void
+    {
+        $this->encoding = $encoding;
     }
 }

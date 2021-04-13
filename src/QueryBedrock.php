@@ -61,7 +61,17 @@ class QueryBedrock extends Query
         // TODO: If server-name contains a ';' it is not escaped, and will break this parsing
         $data = \explode(';', $data);
 
-        $this->info = [
+        if (isset($data[2]) && !preg_match('/\A[0-9]+\z/', $data[2])) {
+            $index = 2;
+            while (!preg_match('/\A[0-9]+\z/', $data[$index])) {
+                $data[1] .= ";" . $data[$index];
+                unset($data[$index]);
+            }
+
+            $data = array_values($data);
+        }
+
+        $info = [
             'game_id'          => $data[ 0 ] ?? null,
             'hostname'         => $data[ 1 ] ?? null,
             'protocol'         => $data[ 2 ] ?? null,
@@ -76,5 +86,7 @@ class QueryBedrock extends Query
             'ipv6port'         => $data[ 11 ] ?? null,
             'extra'            => $data[ 12 ] ?? null, // What is this?
         ];
+
+        $this->info = ($this->encoding)? (array) mb_convert_encoding($info, 'UTF-8', $this->encoding) : (array) mb_convert_encoding($info, 'UTF-8');
     }
 }
