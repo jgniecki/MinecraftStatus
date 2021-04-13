@@ -21,7 +21,7 @@ use \DevLancer\MinecraftStatus\Query;
 
 require_once ("vendor/autoload.php");
 
-$host = "";
+$host = ""; //Address server minecraft
 $port = 25565;
 $timeout = 3;
 $resolveSVR = true;
@@ -39,7 +39,7 @@ use \DevLancer\MinecraftStatus\QueryBedrock;
 
 require_once ("vendor/autoload.php");
 
-$host = "";
+$host = ""; //Address server minecraft
 $port = 19132;
 $timeout = 3;
 $resolveSVR = true;
@@ -57,7 +57,7 @@ use \DevLancer\MinecraftStatus\Ping;
 
 require_once ("vendor/autoload.php");
 
-$host = "";
+$host = ""; //Address server minecraft
 $port = 25565;
 $timeout = 3;
 $resolveSVR = true;
@@ -75,7 +75,7 @@ use \DevLancer\MinecraftStatus\PingPreOld17;
 
 require_once ("vendor/autoload.php");
 
-$host = "";
+$host = ""; //Address server minecraft
 $port = 25565;
 $timeout = 3;
 $resolveSVR = true;
