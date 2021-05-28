@@ -25,7 +25,7 @@ class PingPreOld17 extends Ping
         $data = fread($this->socket, 512);
         $length = strLen($data);
 
-        if( $length < 4 || $data[ 0 ] !== "\xFF" )
+        if( $length < 4 || $data[0] !== "\xFF" )
             return;
 
         $data = substr( $data, 3 ); // Strip packet header (kick message packet and short length)
@@ -35,7 +35,6 @@ class PingPreOld17 extends Ping
         if($data[ 1 ] === "\xA7" && $data[ 2 ] === "\x31")
         {
             $data = explode( "\x00", $data );
-
             $result['description']['text'] = $data[3];
             $result['players'] = [
                 "max" => $data[5],
@@ -51,12 +50,12 @@ class PingPreOld17 extends Ping
             return;
         }
 
-        $data = Explode( "\xA7", $data );
+        $data = explode( "\xA7", $data );
 
-        $result['description']['text'] = substr($data[ 0 ], 0, -1);
+        $result['description']['text'] = substr($data[0], 0, -1);
         $result['players'] = [
-            "max" =>  $data[ 2 ]?? 0,
-            "online" => $data[ 1 ]?? 0,
+            "max" =>  $data[2]?? 0,
+            "online" => $data[1]?? 0,
             "sample" => []
         ];
         $result['version'] = [
