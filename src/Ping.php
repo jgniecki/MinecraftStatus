@@ -100,13 +100,7 @@ class Ping implements StatusInterface
 
         stream_set_timeout($this->socket, $this->timeout);
 
-        try {
-            $this->getStatus();
-        } finally {
-            fclose($this->socket);
-            $this->socket = null;
-        }
-
+        $this->getStatus();
         return $this;
     }
 
@@ -194,7 +188,7 @@ class Ping implements StatusInterface
      */
     public function isConnected(): bool
     {
-        return (bool) $this->socket;
+        return is_resource($this->socket);
     }
 
     /**

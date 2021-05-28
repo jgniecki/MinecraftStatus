@@ -107,14 +107,7 @@ class Query implements StatusInterface
         stream_set_timeout($this->socket, $this->timeout);
         stream_set_blocking($this->socket, true);
 
-
-        try {
-            $this->getStatus();
-        } finally {
-            fclose($this->socket);
-            $this->socket = null;
-        }
-
+        $this->getStatus();
         return $this;
     }
 
@@ -123,7 +116,7 @@ class Query implements StatusInterface
      */
     public function isConnected(): bool
     {
-        return (bool) $this->socket;
+        return is_resource($this->socket);
     }
 
     /**
