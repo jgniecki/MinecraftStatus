@@ -28,7 +28,6 @@ abstract class AbstractStatus implements StatusInterface
     /**
      * @var int
      */
-
     protected int $port;
 
     /**
@@ -171,6 +170,14 @@ abstract class AbstractStatus implements StatusInterface
         return ($this->encoding)?
             (array) \mb_convert_encoding($info, 'UTF-8', $this->encoding) :
             (array) \mb_convert_encoding($info, 'UTF-8');
+    }
+
+    /**
+     * @return bool
+     */
+    public function isResolveSRV(): bool
+    {
+        return $this->resolveSRV;
     }
 
     abstract protected function getStatus();
