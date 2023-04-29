@@ -10,121 +10,23 @@
 namespace DevLancer\MinecraftStatus;
 
 
-use DevLancer\MinecraftStatus\Exception\QueryException;
-use InvalidArgumentException;
+use DevLancer\MinecraftStatus\Exception\Exception;
 
 /**
  * Class QueryException
  * @package DevLancer\MinecraftStatus
  */
-class Query implements StatusInterface
+class Query extends AbstractStatus
 {
     /**
-     * @var string|null
-     */
-    protected ?string $encoding = null;
-
-    /**
-     * @var resource|null
-     */
-    protected $socket = null;
-
-    /**
-     * @var string
-     */
-    protected string $host;
-
-    /**
-     * @var int
-     */
-
-    protected int $port;
-
-    /**
-     * @var int
-     */
-    protected int $timeout;
-
-    /**
-     * @var bool
-     */
-    protected bool $resolveSRV;
-
-    /**
-     * @var string[]
-     */
-    protected array $info = [];
-
-    /**
-     * @var string[]
-     */
-    protected array $players = [];
-
-
-    /**
-     * QueryException constructor.
-     * @param string $host
-     * @param int $port
-     * @param int $timeout
-     * @param bool $resolveSRV
-     * @throws InvalidArgumentException
-     */
-    public function __construct(string $host, int $port = 25565, int $timeout = 3, bool $resolveSRV = true)
-    {
-        $this->host = $host;
-        $this->port = $port;
-        $this->resolveSRV = $resolveSRV;
-
-        $this->setTimeout($timeout);
-    }
-
-    /**
-     *
-     */
-    public function __destruct()
-    {
-        if ($this->isConnected())
-            fclose($this->socket);
-    }
-
-    /**
-     * @return $this
-     * @throws QueryException
+     * @inheritDoc
      */
     public function connect(): self
     {
-        $host = $this->host;
-        if ($this->resolveSRV)
-            $host = $this->resolveSRV($host)?? $host;
-
-        $socket = @fsockopen('udp://' . $host, $this->port, $err_no, $err_str, $this->timeout);
-
-        if( $err_no || $socket === false )
-            throw new QueryException( 'Could not create socket: ' . $err_str );
-
-        $this->socket = $socket;
-
-        stream_set_timeout($this->socket, $this->timeout);
-        stream_set_blocking($this->socket, true);
-
+        $this->_connect('udp://' . $this->host, $this->port);
+        \stream_set_blocking($this->socket, true);
         $this->getStatus();
         return $this;
-    }
-
-    /**
-     * @return bool
-     */
-    public function isConnected(): bool
-    {
-        return is_resource($this->socket);
-    }
-
-    /**
-     * @return array
-     */
-    public function getPlayers(): array
-    {
-        return $this->isConnected()? $this->players : [];
     }
 
     /**
@@ -150,106 +52,71 @@ class Query implements StatusInterface
     }
 
     /**
-     * @return array
-     */
-    public function getInfo(): array
-    {
-        return $this->info;
-    }
-
-    /**
-     * @param int $timeout
-     * @throws InvalidArgumentException
-     */
-    public function setTimeout(int $timeout): void
-    {
-        if ($timeout <= 0)
-            throw new InvalidArgumentException("The timeout must be a positive integer.");
-
-        $this->timeout = $timeout;
-    }
-
-    /**
-     * @param string $host
-     * @return string|null
-     */
-    protected function resolveSRV(string $host): ?string
-    {
-        if(ip2long($host) !== false)
-            return null;
-
-        $record = @dns_get_record( '_minecraft._tcp.' . $host, DNS_SRV );
-
-        return $record[0]['target']?? null;
-    }
-
-    /**
      * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
      *
      * @param int $command
      * @param string $append
      * @return string|null
-     * @throws QueryException
+     * @throws Exception
      */
     protected function writeData(int $command, string $append = ""): ?string
     {
-        $command = pack( 'c*', 0xFE, 0xFD, $command, 0x01, 0x02, 0x03, 0x04 ) . $append;
-        $length  = strlen( $command );
+        $command = \pack('c*', 0xFE, 0xFD, $command, 0x01, 0x02, 0x03, 0x04) . $append;
+        $length  = \strlen($command);
 
-        if($length !== fwrite($this->socket, $command, $length))
-            throw new QueryException( "Failed to write on socket." );
+        if($length !== \fwrite($this->socket, $command, $length))
+            throw new Exception( "Failed to write on socket." );
 
-        $data = fread($this->socket, 4096);
+        $data = \fread($this->socket, 4096);
 
         if($data === false)
-            throw new QueryException( "Failed to read from socket." );
+            throw new Exception( "Failed to read from socket." );
 
-        if(strlen($data) < 5 || $data[0] != $command[2])
+        if(\strlen($data) < 5 || $data[0] != $command[2])
             return null;
 
-        return substr($data, 5);
+        return \substr($data, 5);
     }
 
     /**
      * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
      *
      * @return string
-     * @throws QueryException
+     * @throws Exception
      */
     protected function getChallenge(): string
     {
         $data = $this->writeData(0x09);
 
         if(!$data)
-            throw new QueryException('Failed to receive challenge.');
+            throw new Exception('Failed to receive challenge.');
 
-        return pack('N', $data);
+        return \pack('N', $data);
     }
 
     /**
      * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
      *
-     * @throws QueryException
+     * @throws Exception
      */
     protected function getStatus()
     {
-        $append = $this->getChallenge() . pack('c*', 0x00, 0x00, 0x00, 0x00);
+        $append = $this->getChallenge() . \pack('c*', 0x00, 0x00, 0x00, 0x00);
         $data = $this->writeData(0x00, $append);
 
         if(!$data)
-            throw new QueryException('Failed to receive status.' );
+            throw new Exception('Failed to receive status.' );
 
-        $data = substr($data,11);
-        $data = explode("\x00\x00\x01player_\x00\x00", $data);
+        $data = \substr($data,11);
+        $data = \explode("\x00\x00\x01player_\x00\x00", $data);
 
-        if(count($data) !== 2)
-            throw new QueryException('Failed to parse server\'s response.');
+        if(\count($data) !== 2)
+            throw new Exception('Failed to parse server\'s response.');
 
-        $players = substr($data[1], 0, -2);
-        $data    = explode("\x00", $data[0]);
+        $players = \substr($data[1], 0, -2);
+        $data    = \explode("\x00", $data[0]);
 
         $info = [];
-
         foreach ($data as $id => $value) {
             if ($id % 2 == 0)
                 $key = $value;
@@ -257,25 +124,11 @@ class Query implements StatusInterface
                 $info[$key] = $value;
         }
 
-        $info['hostip'] = gethostbyname($this->host);
+        $info['hostip'] = \gethostbyname($this->host);
 
-        $this->info = ($this->encoding)? (array) mb_convert_encoding($info, 'UTF-8', $this->encoding) : (array) mb_convert_encoding($info, 'UTF-8');
-        $this->players = empty($Players)? explode("\x00", $players) : [];
-    }
-
-    /**
-     * @return string|null
-     */
-    public function getEncoding(): ?string
-    {
-        return $this->encoding;
-    }
-
-    /**
-     * @param string|null $encoding
-     */
-    public function setEncoding(string $encoding): void
-    {
-        $this->encoding = $encoding;
+        //TODO: Test encoding
+        $this->info = $this->encoding($info);
+        if (!empty($players))
+            $this->players = $this->encoding(\explode("\x00", $players));
     }
 }

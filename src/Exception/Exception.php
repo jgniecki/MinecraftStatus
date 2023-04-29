@@ -10,7 +10,7 @@
 namespace DevLancer\MinecraftStatus\Exception;
 
 
-class PingException extends \Exception
+class Exception extends \Exception
 {
 
 }

@@ -16,9 +16,6 @@ namespace DevLancer\MinecraftStatus;
  */
 interface StatusInterface
 {
-    /**
-     * @return mixed
-     */
     public function connect();
 
     /**
