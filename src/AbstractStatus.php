@@ -71,7 +71,7 @@ abstract class AbstractStatus implements StatusInterface
         if ($this->resolveSRV) {
             $resolve = $this->resolveSRV($host);
             $host = ($resolve['host'] != null)? $resolve['host'] : $host;
-            $port = ($resolve['port'] != null)? $resolve['port'] : $host;
+            $port = ($resolve['port'] != null)? $resolve['port'] : $port;
         }
 
         $this->host = $host;
