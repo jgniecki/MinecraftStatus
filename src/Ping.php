@@ -24,6 +24,9 @@ class Ping extends AbstractStatus
      */
     public function connect(): self
     {
+        if ($this->isConnected())
+            $this->disconnect();
+
         $this->_connect($this->host, $this->port);
         $this->getStatus();
         return $this;

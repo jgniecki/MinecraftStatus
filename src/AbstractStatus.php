@@ -99,7 +99,12 @@ abstract class AbstractStatus implements StatusInterface
     public function __destruct()
     {
         if ($this->isConnected())
-            fclose($this->socket);
+            $this->disconnect();
+    }
+
+    protected function disconnect()
+    {
+        fclose($this->socket);
     }
 
     /**

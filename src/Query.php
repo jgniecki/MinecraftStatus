@@ -20,9 +20,13 @@ class Query extends AbstractStatus
 {
     /**
      * @inheritDoc
+     * @throws Exception
      */
     public function connect(): self
     {
+        if ($this->isConnected())
+            $this->disconnect();
+
         $this->_connect('udp://' . $this->host, $this->port);
         \stream_set_blocking($this->socket, true);
         $this->getStatus();
