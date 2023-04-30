@@ -14,10 +14,10 @@ trait ResolveSRVTrait
      * @param string $host
      * @return array
      */
-    protected function resolveSRV(string $host): ?array
+    protected function resolveSRV(string $host): array
     {
         if(ip2long($host) !== false)
-            return null;
+            return [];
 
         $record = @dns_get_record( '_minecraft._tcp.' . $host, DNS_SRV );
 
