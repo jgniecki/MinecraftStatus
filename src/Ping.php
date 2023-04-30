@@ -11,7 +11,6 @@ namespace DevLancer\MinecraftStatus;
 
 
 use DevLancer\MinecraftStatus\Exception\Exception;
-use InvalidArgumentException;
 
 /**
  * Class Ping
