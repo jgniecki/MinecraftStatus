@@ -58,9 +58,11 @@ class QueryBedrock extends Query
 
         // TODO: What are the 2 bytes after the magic?
         $data = \substr($data, 35);
-
         $data = \explode(';', $data);
         $offset = \count($data) - 13;
+        if ($offset < 0)
+            $offset = 0;
+
         $info = [
             'game_id'          => $data[0] ?? null,
             'hostname'         => [],
