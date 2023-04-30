@@ -23,7 +23,7 @@ class PingPreOld17 extends Ping
      *
      * @inheritDoc
      */
-    public function getStatus()
+    public function getStatus(): void
     {
         \fwrite($this->socket, "\xFE\x01");
         $data = \fread($this->socket, 512);
@@ -49,7 +49,7 @@ class PingPreOld17 extends Ping
                 'protocol' => (isset($data[1]))? (int) $data[1] : 0
             ];
 
-            $this->info = $result;
+            $this->info = $this->encoding($result);
             return;
         }
 
