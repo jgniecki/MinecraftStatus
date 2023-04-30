@@ -49,8 +49,7 @@ class Ping extends AbstractStatus
         $data .= "\x01"; // Next state: status (varint)
         $data = \pack('c', \strlen($data)) . $data; // prepend length of packet ID + data
 
-        \fwrite($this->socket, $data); // handshake
-        \fwrite($this->socket, "\x01\x00"); // status ping
+        \fwrite($this->socket, $data . "\x01\x00"); // handshake
 
         $length = $this->readVarInt(); // full packet length
         if($length < 10)
@@ -58,6 +57,9 @@ class Ping extends AbstractStatus
 
         $this->readVarInt(); // packet type, in server ping it's 0
         $length = $this->readVarInt(); // string length
+        if($length == 0)
+            throw new Exception('Failed to receive status.');
+
         $data = "";
 
         do {
