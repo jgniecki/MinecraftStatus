@@ -58,37 +58,27 @@ class QueryBedrock extends Query
 
         // TODO: What are the 2 bytes after the magic?
         $data = \substr($data, 35);
-
-        // TODO: If server-name contains a ';' it is not escaped, and will break this parsing
         $data = \explode(';', $data);
-
-        //TODO What is this?
-//        if (isset($data[2]) && !preg_match('/\A[0-9]+\z/', $data[2])) {
-//            $index = 2;
-//            while (!preg_match('/\A[0-9]+\z/', $data[$index])) {
-//                $data[1] .= ";" . $data[$index];
-//                unset($data[$index]);
-//            }
-//
-//            $data = array_values($data);
-//        }
-
+        $offset = count($data) - 13;
         $info = [
             'game_id'          => $data[0] ?? null,
-            'hostname'         => $data[1] ?? null,
-            'protocol'         => $data[2] ?? null,
-            'version'          => $data[3] ?? null,
-            'numplayers'       => (isset($data[4]))? (int) $data[4] : 0,
-            'maxplayers'       => (isset($data[5]))? (int) $data[5] : 0,
-            'server_id'        => $data[6] ?? null,
-            'map'              => $data[7] ?? null,
-            'game_mode'        => $data[8] ?? null,
-            'nintendo_limited' => $data[9] ?? null,
-            'ipv4port'         => (isset($data[10]))? (int) $data[10] : 0,
-            'ipv6port'         => (isset($data[11]))? (int) $data[11] : 0,
-            'extra'            => $data[12] ?? null, // What is this?
+            'hostname'         => [],
+            'protocol'         => $data[2+$offset] ?? null,
+            'version'          => $data[3+$offset] ?? null,
+            'numplayers'       => (isset($data[4+$offset]))? (int) $data[4+$offset] : 0,
+            'maxplayers'       => (isset($data[5+$offset]))? (int) $data[5+$offset] : 0,
+            'server_id'        => $data[6+$offset] ?? null,
+            'map'              => $data[7+$offset] ?? null,
+            'game_mode'        => $data[8+$offset] ?? null,
+            'nintendo_limited' => $data[9+$offset] ?? null,
+            'ipv4port'         => (isset($data[10+$offset]))? (int) $data[10+$offset] : 0,
+            'ipv6port'         => (isset($data[11+$offset]))? (int) $data[11+$offset] : 0,
+            'extra'            => $data[12+$offset] ?? null, // What is this?
         ];
 
+        for ($i = 0; $i <= $offset; $i++)
+            $info['hostname'][] = $data[1+$i];
+        $info['hostname'] = implode(";", $info['hostname']);
         $this->info = $this->encoding($info);
     }
 }
