@@ -114,34 +114,28 @@ class Ping extends AbstractStatus
 
     /**
      * @return int
+     * @throws Exception
      */
     public function getCountPlayers(): int
     {
-        if (!$this->isConnected() || !isset($this->info['players']['online']))
-            return 0;
-
-        return (int) $this->info['players']['online'];
+        return (int) $this->getInfo()['players']['online'] ?? 0;
     }
 
     /**
      * @return int
+     * @throws Exception
      */
     public function getMaxPlayers(): int
     {
-        if (!$this->isConnected() || !isset($this->info['players']['max']))
-            return 0;
-
-        return (int) $this->info['players']['max'];
+        return (int) $this->getInfo()['players']['max'] ?? 0;
     }
 
     /**
      * @return string
+     * @throws Exception
      */
     public function getFavicon(): string
     {
-        if (!$this->isConnected() || !isset($this->info['favicon']))
-            return "";
-
-        return $this->info['favicon'];
+        return $this->getInfo()['favicon'] ?? "";
     }
 }

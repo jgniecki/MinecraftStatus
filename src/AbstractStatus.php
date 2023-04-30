@@ -117,17 +117,25 @@ abstract class AbstractStatus implements StatusInterface
 
     /**
      * @inheritDoc
+     * @throws Exception
      */
     public function getPlayers(): array
     {
+        if (!$this->isConnected())
+            throw new Exception('The connection has not been established.');
+
         return $this->players;
     }
 
     /**
      * @return array
+     * @throws Exception
      */
     public function getInfo(): array
     {
+        if (!$this->isConnected())
+            throw new Exception('The connection has not been established.');
+
         return $this->info;
     }
 

@@ -36,24 +36,20 @@ class Query extends AbstractStatus
 
     /**
      * @return int
+     * @throws Exception
      */
     public function getCountPlayers(): int
     {
-        if (!$this->isConnected() || !isset($this->info['numplayers']))
-            return 0;
-
-        return (int) $this->info['numplayers'];
+        return (int) $this->getInfo()['numplayers'] ?? 0;
     }
 
     /**
      * @return int
+     * @throws Exception
      */
     public function getMaxPlayers(): int
     {
-        if (!$this->isConnected() || !isset($this->info['maxplayers']))
-            return 0;
-
-        return (int) $this->info['maxplayers'];
+        return (int) $this->getInfo()['maxplayers'] ?? 0;
     }
 
     /**
@@ -104,7 +100,7 @@ class Query extends AbstractStatus
      *
      * @throws Exception
      */
-    protected function getStatus():void
+    protected function getStatus(): void
     {
         $append = $this->getChallenge() . \pack('c*', 0x00, 0x00, 0x00, 0x00);
         $data = $this->writeData(0x00, $append);
