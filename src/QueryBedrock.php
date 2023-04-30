@@ -84,8 +84,8 @@ class QueryBedrock extends Query
             'map'              => $data[7] ?? null,
             'game_mode'        => $data[8] ?? null,
             'nintendo_limited' => $data[9] ?? null,
-            'ipv4port'         => (isset($data[10]))? (int) $data[4] : 0,
-            'ipv6port'         => (isset($data[11]))? (int) $data[4] : 0,
+            'ipv4port'         => (isset($data[10]))? (int) $data[10] : 0,
+            'ipv6port'         => (isset($data[11]))? (int) $data[11] : 0,
             'extra'            => $data[12] ?? null, // What is this?
         ];
 
