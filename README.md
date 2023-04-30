@@ -1,7 +1,7 @@
 # Minecraft Status [![Packagist](https://img.shields.io/packagist/dt/dev-lancer/minecraft-status.svg)](https://packagist.org/packages/dev-lancer/minecraft-status)
 
 ## Installation
-This library can installed by issuing the following command:
+This library can be installed by issuing the following command:
 ```bash
 composer require dev-lancer/minecraft-status
 ```
@@ -31,7 +31,32 @@ $query->connect();
 print_r($query->getInfo());
 ```
 
+### Ping
+
+```php
+<?php
+use \DevLancer\MinecraftStatus\Ping;
+use \DevLancer\MinecraftStatus\PingPreOld17;
+
+require_once ("vendor/autoload.php");
+
+$host = ""; //Address server minecraft
+$port = 25565;
+$timeout = 3;
+$resolveSVR = true;
+
+$ping = new Ping($host, $port, $timeout, $resolveSVR);
+//$ping = new PingPreOld17($host, $port, $timeout, $resolveSVR); //use when version is older than Minecraft 1.7
+$ping->connect();
+print_r($ping->getInfo());
+```
+
+If you want to get `ping` info from a server that uses a version older than Minecraft 1.7, then use class `PingPreOld17` instead of `Ping`.
+
+
 ### QueryBedrock
+
+Use this class for bedrock edition servers
 
 ```php
 <?php
@@ -49,40 +74,53 @@ $query->connect();
 print_r($query->getInfo());
 ```
 
-### Ping
-
+### Method list
 ```php
-<?php
-use \DevLancer\MinecraftStatus\Ping;
-
-require_once ("vendor/autoload.php");
-
-$host = ""; //Address server minecraft
-$port = 25565;
-$timeout = 3;
-$resolveSVR = true;
-
-$ping = new Ping($host, $port, $timeout, $resolveSVR);
-$ping->connect();
-print_r($ping->getInfo());
+connect()
 ```
 
-### PingPreOld17
+```php
+isConnected(): bool
+```
 
 ```php
-<?php
-use \DevLancer\MinecraftStatus\PingPreOld17;
+getPlayers(): array
+```
 
-require_once ("vendor/autoload.php");
+```php
+getCountPlayers(): int
+```
 
-$host = ""; //Address server minecraft
-$port = 25565;
-$timeout = 3;
-$resolveSVR = true;
+```php
+getMaxPlayers(): int
+```
 
-$ping = new PingPreOld17($host, $port, $timeout, $resolveSVR);
-$ping->connect();
-print_r($ping->getInfo());
+```php
+setTimeout(int $timeout): void
+```
+
+```php
+getTimeout(): int
+```
+
+```php
+getInfo(): array
+```
+
+```php
+getEncoding(): string
+```
+
+```php
+setEncoding(string $encoding): void
+```
+
+```php
+getHost(): string
+```
+
+```php
+getPort(): int
 ```
 
 ## License
