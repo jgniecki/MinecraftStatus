@@ -54,7 +54,7 @@ class Ping extends AbstractStatus
 
         $length = $this->readVarInt(); // full packet length
         if($length < 10)
-            throw new Exception('Failed to receive status.' );
+            throw new Exception('Failed to receive status.');
 
         $this->readVarInt(); // packet type, in server ping it's 0
         $length = $this->readVarInt(); // string length
@@ -89,7 +89,7 @@ class Ping extends AbstractStatus
      * @return int
      * @throws Exception
      */
-    private function readVarInt()
+    private function readVarInt(): int
     {
         $i = 0;
         $j = 0;
