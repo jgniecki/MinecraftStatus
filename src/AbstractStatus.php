@@ -51,17 +51,15 @@ abstract class AbstractStatus implements StatusInterface
     protected array $players = [];
 
     /**
-     * @var string|null
+     * @var string
      */
     protected string $encoding = 'UTF-8';
 
     /**
-     * QueryException constructor.
      * @param string $host
      * @param int $port
      * @param int $timeout
      * @param bool $resolveSRV
-     * @throws InvalidArgumentException
      */
     public function __construct(string $host, int $port = 25565, int $timeout = 3, bool $resolveSRV = true)
     {
@@ -140,9 +138,9 @@ abstract class AbstractStatus implements StatusInterface
     }
 
     /**
-     * @return string|null
+     * @return string
      */
-    public function getEncoding(): ?string
+    public function getEncoding(): string
     {
         return $this->encoding;
     }
