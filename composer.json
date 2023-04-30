@@ -1,7 +1,7 @@
 {
     "name": "dev-lancer/minecraft-status",
     "type": "library",
-    "description": "minecraft query status",
+    "description": "PHP library to query Minecraft servers",
     "license": "MIT",
     "authors": [
         {
