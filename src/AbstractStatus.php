@@ -190,4 +190,20 @@ abstract class AbstractStatus implements StatusInterface
     {
         return $this->resolveSRV;
     }
+
+    /**
+     * @return string
+     */
+    public function getHost(): string
+    {
+        return $this->host;
+    }
+
+    /**
+     * @return int
+     */
+    public function getPort(): int
+    {
+        return $this->port;
+    }
 }
