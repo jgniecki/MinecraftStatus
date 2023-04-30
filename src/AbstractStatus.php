@@ -180,7 +180,7 @@ abstract class AbstractStatus implements StatusInterface
      */
     protected function encoding(array $data): array
     {
-        return (array) \mb_convert_encoding($data, $this->encoding, 'auto');
+        return (array) \mb_convert_encoding($data, $this->encoding);
     }
 
     /**
