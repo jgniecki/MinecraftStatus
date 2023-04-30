@@ -53,7 +53,7 @@ abstract class AbstractStatus implements StatusInterface
     /**
      * @var string|null
      */
-    protected ?string $encoding = null;
+    protected string $encoding = 'UTF-8';
 
     /**
      * QueryException constructor.
@@ -70,7 +70,7 @@ abstract class AbstractStatus implements StatusInterface
         if ($this->resolveSRV) {
             $resolve = $this->resolveSRV($host);
             $host = ($resolve['host'] != null)? $resolve['host'] : $host;
-            $port = ($resolve['port'] != null)? $resolve['port'] : $port;
+            $port = ($resolve['port'] != null)? (int) $resolve['port'] : $port;
         }
 
         $this->host = $host;
@@ -167,14 +167,12 @@ abstract class AbstractStatus implements StatusInterface
     }
 
     /**
-     * @param array $info
+     * @param array $data
      * @return array
      */
-    protected function encoding(array $info): array
+    protected function encoding(array $data): array
     {
-        return ($this->encoding)?
-            (array) \mb_convert_encoding($info, 'UTF-8', $this->encoding) :
-            (array) \mb_convert_encoding($info, 'UTF-8');
+        return (array) \mb_convert_encoding($data, $this->encoding, 'auto');
     }
 
     /**
