@@ -38,7 +38,7 @@ class Ping extends AbstractStatus
      *
      * @throws Exception
      */
-    protected function getStatus()
+    protected function getStatus(): void
     {
         $timestart = \microtime(true); // for read timeout purposes
 

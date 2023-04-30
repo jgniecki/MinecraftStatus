@@ -104,7 +104,7 @@ class Query extends AbstractStatus
      *
      * @throws Exception
      */
-    protected function getStatus()
+    protected function getStatus():void
     {
         $append = $this->getChallenge() . \pack('c*', 0x00, 0x00, 0x00, 0x00);
         $data = $this->writeData(0x00, $append);
@@ -129,10 +129,9 @@ class Query extends AbstractStatus
                 $info[$key] = $value;
         }
 
-        $info['hostip'] = \gethostbyname($this->host);
-
         //TODO: Test encoding
         $this->info = $this->encoding($info);
+        $this->info['hostip'] = \gethostbyname($this->host);
         if (!empty($players))
             $this->players = $this->encoding(\explode("\x00", $players));
     }

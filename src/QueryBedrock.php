@@ -33,7 +33,7 @@ class QueryBedrock extends Query
      *
      * @inheritDoc
      */
-    protected function getStatus()
+    protected function getStatus(): void
     {
         $OFFLINE_MESSAGE_DATA_ID = \pack('c*', 0x00, 0xFF, 0xFF, 0x00, 0xFE, 0xFE, 0xFE, 0xFE, 0xFD, 0xFD, 0xFD, 0xFD, 0x12, 0x34, 0x56, 0x78);
 
