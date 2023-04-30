@@ -184,6 +184,4 @@ abstract class AbstractStatus implements StatusInterface
     {
         return $this->resolveSRV;
     }
-
-    abstract protected function getStatus();
 }
