@@ -20,6 +20,7 @@ use InvalidArgumentException;
 class Ping extends AbstractStatus
 {
     /**
+     * @return StatusInterface
      * @throws Exception
      */
     public function connect(): self

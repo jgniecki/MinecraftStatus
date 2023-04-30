@@ -20,6 +20,7 @@ class Query extends AbstractStatus
 {
     /**
      * @inheritDoc
+     * @return StatusInterface
      * @throws Exception
      */
     public function connect(): self
