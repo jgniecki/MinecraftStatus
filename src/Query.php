@@ -118,14 +118,9 @@ class Query extends AbstractStatus
         $data    = \explode("\x00", $data[0]);
 
         $info = [];
-        foreach ($data as $id => $value) {
-            if ($id % 2 == 0)
-                $key = $value;
-            else
-                $info[$key] = $value;
-        }
+        for ($i = 1; $i < count($data); $i+=2)
+            $info[$data[$i-1]] = $data[$i];
 
-        //TODO: Test encoding
         $this->info = $this->encoding($info);
         $this->info['hostip'] = \gethostbyname($this->host);
         if (!empty($players))
