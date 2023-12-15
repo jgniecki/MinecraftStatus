@@ -19,7 +19,7 @@ use DevLancer\MinecraftStatus\Exception\Exception;
 class Ping extends AbstractStatus
 {
     /**
-     * @return StatusInterface
+     * @return Ping
      * @throws Exception
      */
     public function connect(): self
@@ -42,7 +42,7 @@ class Ping extends AbstractStatus
         $timestart = \microtime(true); // for read timeout purposes
 
         $data = "\x00"; // packet ID = 0 (varint)
-        $data .= "\x04"; // Protocol version (varint)
+        $data .= "\xff\xff\xff\xff\x0f"; //Protocol version (varint)
         $data .= \pack('c', \strlen( $this->host)) . $this->host; // Server (varint len + UTF-8 addr)
         $data .= \pack('n', $this->port); // Server port (unsigned short)
         $data .= "\x01"; // Next state: status (varint)
@@ -56,7 +56,7 @@ class Ping extends AbstractStatus
 
         $this->readVarInt(); // packet type, in server ping it's 0
         $length = $this->readVarInt(); // string length
-        if($length == 0)
+        if($length < 2)
             throw new Exception('Failed to receive status.');
 
         $data = "";
@@ -66,6 +66,9 @@ class Ping extends AbstractStatus
                 throw new Exception( 'Server read timed out' );
 
             $remainder = $length - \strlen($data);
+            if ($remainder <= 0)
+                break;
+
             $block = \fread($this->socket, $remainder);
             if (!$block)
                 throw new Exception( 'Server returned too few data' );
@@ -74,6 +77,12 @@ class Ping extends AbstractStatus
         } while(\strlen($data) < $length);
 
         $result = \json_decode($data, true);
+        if (\json_last_error() !== JSON_ERROR_NONE)
+            throw new Exception( 'JSON parsing failed: ' . \json_last_error_msg( ) );
+
+        if (!\is_array($result))
+            throw new Exception( 'The server did not return the information' );
+
         $result = $this->encoding($result);
 
         if (isset($result['players']['sample'])) {
