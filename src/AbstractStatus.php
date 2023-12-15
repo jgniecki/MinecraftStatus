@@ -82,7 +82,7 @@ abstract class AbstractStatus implements StatusInterface
      */
     protected function _connect(string $host, int $port)
     {
-        $socket = @fsockopen($host, $port, $err_no, $err_str, $this->timeout);
+        $socket = @fsockopen($host, $port, $err_no, $err_str, (float) $this->timeout);
 
         if($err_no || !is_resource($socket))
             throw new Exception( 'Could not create socket: ' . $err_str );
