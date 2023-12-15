@@ -18,9 +18,9 @@ interface StatusInterface
 {
     /**
      * Attempts to connect to the given host.
-     * @return mixed
+     * @return StatusInterface
      */
-    public function connect();
+    public function connect(): StatusInterface;
 
     /**
      * Returns whether the connection was successful
