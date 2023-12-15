@@ -19,6 +19,16 @@ use DevLancer\MinecraftStatus\Exception\Exception;
 class PingPreOld17 extends Ping
 {
     /**
+     * @inheritDoc
+     * @return PingPreOld17
+     * @throws Exception
+     */
+    public function connect(): Ping
+    {
+        return parent::connect();
+    }
+
+    /**
      * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
      *
      * @inheritDoc
@@ -27,8 +37,10 @@ class PingPreOld17 extends Ping
     {
         \fwrite($this->socket, "\xFE\x01");
         $data = \fread($this->socket, 512);
-        $length = \strlen($data);
+        if(empty($data))
+            throw new Exception('Failed to receive status.' );
 
+        $length = \strlen($data);
         if( $length < 4 || $data[0] !== "\xFF" )
             throw new Exception('Failed to receive status.' );
 
