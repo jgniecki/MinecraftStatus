@@ -29,6 +29,16 @@ class QueryBedrock extends Query
     }
 
     /**
+     * @inheritDoc
+     * @return QueryBedrock
+     * @throws Exception
+     */
+    public function connect(): QueryBedrock
+    {
+        return parent::connect();
+    }
+
+    /**
      * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
      *
      * @inheritDoc

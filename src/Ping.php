@@ -19,6 +19,7 @@ use DevLancer\MinecraftStatus\Exception\Exception;
 class Ping extends AbstractStatus
 {
     /**
+     * @inheritDoc
      * @return Ping
      * @throws Exception
      */
