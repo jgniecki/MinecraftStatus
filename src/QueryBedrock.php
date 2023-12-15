@@ -56,6 +56,12 @@ class QueryBedrock extends Query
         if(\substr($data, 17, 16 ) !== $OFFLINE_MESSAGE_DATA_ID)
             throw new Exception("Magic bytes do not match." );
 
+        $info = $this->resolveStatus($data);
+        $this->info = $this->encoding($info);
+    }
+
+    protected function resolveStatus(string $data): array
+    {
         // TODO: What are the 2 bytes after the magic?
         $data = \substr($data, 35);
         $data = \explode(';', $data);
@@ -82,6 +88,7 @@ class QueryBedrock extends Query
         for ($i = 0; $i <= $offset; $i++)
             $info['hostname'][] = $data[1+$i];
         $info['hostname'] = implode(";", $info['hostname']);
-        $this->info = $this->encoding($info);
+
+        return $info;
     }
 }
