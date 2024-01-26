@@ -35,7 +35,8 @@ class QueryBedrock extends Query
      */
     public function connect(): QueryBedrock
     {
-        return parent::connect();
+        parent::connect();
+        return $this;
     }
 
     /**
@@ -70,6 +71,10 @@ class QueryBedrock extends Query
         $this->info = $this->encoding($info);
     }
 
+    /**
+     * @param string $data
+     * @return array<string, int|string|null>
+     */
     protected function resolveStatus(string $data): array
     {
         // TODO: What are the 2 bytes after the magic?
