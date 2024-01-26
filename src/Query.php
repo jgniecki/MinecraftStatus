@@ -13,7 +13,7 @@ namespace DevLancer\MinecraftStatus;
 use DevLancer\MinecraftStatus\Exception\Exception;
 
 /**
- * Class QueryException
+ * Class Query
  * @package DevLancer\MinecraftStatus
  */
 class Query extends AbstractStatus
@@ -40,7 +40,7 @@ class Query extends AbstractStatus
      */
     public function getCountPlayers(): int
     {
-        return (int) $this->getInfo()['numplayers'] ?? 0;
+        return (int) ($this->getInfo()['numplayers'] ?? 0);
     }
 
     /**
@@ -49,7 +49,7 @@ class Query extends AbstractStatus
      */
     public function getMaxPlayers(): int
     {
-        return (int) $this->getInfo()['maxplayers'] ?? 0;
+        return (int) ($this->getInfo()['maxplayers'] ?? 0);
     }
 
     /**
