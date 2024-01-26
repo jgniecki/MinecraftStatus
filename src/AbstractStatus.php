@@ -41,7 +41,7 @@ abstract class AbstractStatus implements StatusInterface
     protected bool $resolveSRV;
 
     /**
-     * @var string[]
+     * @var array<string, mixed>
      */
     protected array $info = [];
 
@@ -80,7 +80,7 @@ abstract class AbstractStatus implements StatusInterface
     /**
      * @throws Exception
      */
-    protected function _connect(string $host, int $port)
+    protected function _connect(string $host, int $port): void
     {
         $socket = @fsockopen($host, $port, $err_no, $err_str, (float) $this->timeout);
 
@@ -100,9 +100,10 @@ abstract class AbstractStatus implements StatusInterface
             $this->disconnect();
     }
 
-    protected function disconnect()
+    protected function disconnect(): void
     {
-        fclose($this->socket);
+        if ($this->socket)
+            fclose($this->socket);
     }
 
     /**
@@ -126,7 +127,7 @@ abstract class AbstractStatus implements StatusInterface
     }
 
     /**
-     * @return array
+     * @inheritDoc
      * @throws Exception
      */
     public function getInfo(): array
@@ -146,7 +147,7 @@ abstract class AbstractStatus implements StatusInterface
     }
 
     /**
-     * @param string|null $encoding
+     * @param string $encoding
      */
     public function setEncoding(string $encoding): void
     {
@@ -155,6 +156,7 @@ abstract class AbstractStatus implements StatusInterface
 
     /**
      * @inheritDoc
+     * @throws InvalidArgumentException The timeout must be a positive integer.
      */
     public function setTimeout(int $timeout): void
     {
