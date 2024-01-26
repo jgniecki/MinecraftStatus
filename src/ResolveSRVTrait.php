@@ -12,7 +12,7 @@ trait ResolveSRVTrait
 {
     /**
      * @param string $host
-     * @return array
+     * @return array<string, string|null>
      */
     protected function resolveSRV(string $host): array
     {
