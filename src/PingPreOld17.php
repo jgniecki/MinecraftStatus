@@ -23,17 +23,19 @@ class PingPreOld17 extends Ping
      * @return PingPreOld17
      * @throws Exception
      */
-    public function connect(): Ping
+    public function connect(): PingPreOld17
     {
-        return parent::connect();
+        parent::connect();
+        return $this;
     }
 
     /**
      * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
      *
      * @inheritDoc
+     * @throws Exception
      */
-    public function getStatus(): void
+    protected function getStatus(): void
     {
         \fwrite($this->socket, "\xFE\x01");
         $data = \fread($this->socket, 512);
