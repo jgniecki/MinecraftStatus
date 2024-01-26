@@ -20,5 +20,8 @@
         "psr-4": {
             "DevLancer\\MinecraftStatus\\": "src/"
         }
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^1.10"
     }
 }
