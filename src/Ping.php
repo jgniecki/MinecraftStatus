@@ -129,7 +129,7 @@ class Ping extends AbstractStatus
      */
     public function getCountPlayers(): int
     {
-        return (int) $this->getInfo()['players']['online'] ?? 0;
+        return (int) ($this->getInfo()['players']['online'] ?? 0);
     }
 
     /**
@@ -138,7 +138,7 @@ class Ping extends AbstractStatus
      */
     public function getMaxPlayers(): int
     {
-        return (int) $this->getInfo()['players']['max'] ?? 0;
+        return (int) ($this->getInfo()['players']['max'] ?? 0);
     }
 
     /**
