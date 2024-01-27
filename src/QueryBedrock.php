@@ -10,7 +10,8 @@
 namespace DevLancer\MinecraftStatus;
 
 
-use DevLancer\MinecraftStatus\Exception\Exception;
+use DevLancer\MinecraftStatus\Exception\ConnectionException;
+use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
 
 /**
  * Class QueryBedrock
@@ -31,7 +32,8 @@ class QueryBedrock extends Query
     /**
      * @inheritDoc
      * @return QueryBedrock
-     * @throws Exception
+     * @throws ConnectionException
+     * @throws ReceiveStatusException
      */
     public function connect(): QueryBedrock
     {
@@ -43,6 +45,7 @@ class QueryBedrock extends Query
      * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
      *
      * @inheritDoc
+     * @throws ReceiveStatusException
      */
     protected function getStatus(): void
     {
@@ -54,18 +57,18 @@ class QueryBedrock extends Query
         $length  = \strlen($command);
 
         if($length !== \fwrite($this->socket, $command, $length))
-            throw new Exception( "Failed to write on socket." );
+            throw new ReceiveStatusException( "Failed to write on socket.");
 
         $data = \fread($this->socket, 4096);
 
         if($data === false)
-            throw new Exception("Failed to read from socket." );
+            throw new ReceiveStatusException("Failed to read from socket.");
 
-        if($data[ 0 ] !== "\x1C")
-            throw new Exception("First byte is not ID_UNCONNECTED_PONG.");
+        if($data[0] !== "\x1C")
+            throw new ReceiveStatusException("First byte is not ID_UNCONNECTED_PONG.");
 
-        if(\substr($data, 17, 16 ) !== $OFFLINE_MESSAGE_DATA_ID)
-            throw new Exception("Magic bytes do not match." );
+        if(\substr($data, 17, 16) !== $OFFLINE_MESSAGE_DATA_ID)
+            throw new ReceiveStatusException("Magic bytes do not match.");
 
         $info = $this->resolveStatus($data);
         $this->info = $this->encoding($info);
@@ -102,7 +105,7 @@ class QueryBedrock extends Query
 
         for ($i = 0; $i <= $offset; $i++)
             $info['hostname'][] = $data[1+$i];
-        $info['hostname'] = implode(";", $info['hostname']);
+        $info['hostname'] = \implode(";", $info['hostname']);
 
         return $info;
     }
