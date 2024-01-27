@@ -30,6 +30,7 @@ try {
     echo $e->getMessage() . "\n<br>";
 } catch (ReceiveStatusException $e) {
     //When communication with the server failed
+    //Query communication is probably disabled
     print_r($query->getInfo()); //Return empty array
     echo $e->getMessage() . "\n<br>";
 }
