@@ -8,8 +8,8 @@
 
 namespace DevLancer\MinecraftStatus;
 
-use DevLancer\MinecraftStatus\Exception\Exception;
-use InvalidArgumentException;
+use DevLancer\MinecraftStatus\Exception\ConnectionException;
+use DevLancer\MinecraftStatus\Exception\NotConnectedException;
 
 abstract class AbstractStatus implements StatusInterface
 {
@@ -78,14 +78,14 @@ abstract class AbstractStatus implements StatusInterface
     }
 
     /**
-     * @throws Exception
+     * @throws ConnectionException
      */
     protected function _connect(string $host, int $port): void
     {
-        $socket = @fsockopen($host, $port, $err_no, $err_str, (float) $this->timeout);
+        $socket = @\fsockopen($host, $port, $err_no, $err_str, (float) $this->timeout);
 
-        if($err_no || !is_resource($socket))
-            throw new Exception( 'Could not create socket: ' . $err_str );
+        if($err_no || !\is_resource($socket))
+            throw new ConnectionException( 'Failed to connect or create a socket: ' . $err_str );
 
         $this->socket = $socket;
         stream_set_timeout($this->socket, $this->timeout);
@@ -96,14 +96,15 @@ abstract class AbstractStatus implements StatusInterface
      */
     public function __destruct()
     {
-        if ($this->isConnected())
-            $this->disconnect();
+        $this->disconnect();
     }
 
-    protected function disconnect(): void
+    public function disconnect(): void
     {
-        if ($this->socket)
-            fclose($this->socket);
+        if ($this->isConnected()) {
+            if(fclose($this->socket))
+                $this->socket = null;
+        }
     }
 
     /**
@@ -116,24 +117,24 @@ abstract class AbstractStatus implements StatusInterface
 
     /**
      * @inheritDoc
-     * @throws Exception
+     * @throws NotConnectedException
      */
     public function getPlayers(): array
     {
         if (!$this->isConnected())
-            throw new Exception('The connection has not been established.');
+            throw new NotConnectedException('The connection has not been established.');
 
         return $this->players;
     }
 
     /**
      * @inheritDoc
-     * @throws Exception
+     * @throws NotConnectedException
      */
     public function getInfo(): array
     {
         if (!$this->isConnected())
-            throw new Exception('The connection has not been established.');
+            throw new NotConnectedException('The connection has not been established.');
 
         return $this->info;
     }
@@ -156,12 +157,12 @@ abstract class AbstractStatus implements StatusInterface
 
     /**
      * @inheritDoc
-     * @throws InvalidArgumentException The timeout must be a positive integer.
+     * @throws \InvalidArgumentException The timeout must be a positive integer.
      */
     public function setTimeout(int $timeout): void
     {
         if ($timeout <= 0)
-            throw new InvalidArgumentException("The timeout must be a positive integer.");
+            throw new \InvalidArgumentException("The timeout must be a positive integer.");
 
         $this->timeout = $timeout;
     }
