@@ -2,6 +2,7 @@
     "name": "dev-lancer/minecraft-status",
     "type": "library",
     "description": "PHP library to query Minecraft servers",
+    "keywords": ["minecraft", "status", "server", "query", "php", "ping", "bedrock", "raknet"],
     "license": "MIT",
     "authors": [
         {
