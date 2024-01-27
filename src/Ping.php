@@ -96,6 +96,10 @@ class Ping extends AbstractStatus
         $this->info = $result;
     }
 
+    /**
+     * @param array $data<string, mixed>
+     * @return void
+     */
     protected function resolvePlayers(array $data): void
     {
         if (isset($data['players']['sample'])) {
