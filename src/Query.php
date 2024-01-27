@@ -10,7 +10,9 @@
 namespace DevLancer\MinecraftStatus;
 
 
-use DevLancer\MinecraftStatus\Exception\Exception;
+use DevLancer\MinecraftStatus\Exception\ConnectionException;
+use DevLancer\MinecraftStatus\Exception\NotConnectedException;
+use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
 
 /**
  * Class Query
@@ -21,7 +23,8 @@ class Query extends AbstractStatus
     /**
      * @inheritDoc
      * @return Query
-     * @throws Exception
+     * @throws ReceiveStatusException
+     * @throws ConnectionException
      */
     public function connect(): self
     {
@@ -36,7 +39,7 @@ class Query extends AbstractStatus
 
     /**
      * @return int
-     * @throws Exception
+     * @throws NotConnectedException
      */
     public function getCountPlayers(): int
     {
@@ -45,7 +48,7 @@ class Query extends AbstractStatus
 
     /**
      * @return int
-     * @throws Exception
+     * @throws NotConnectedException
      */
     public function getMaxPlayers(): int
     {
@@ -58,7 +61,7 @@ class Query extends AbstractStatus
      * @param int $command
      * @param string $append
      * @return string|null
-     * @throws Exception
+     * @throws ReceiveStatusException
      */
     protected function writeData(int $command, string $append = ""): ?string
     {
@@ -66,12 +69,12 @@ class Query extends AbstractStatus
         $length  = \strlen($command);
 
         if($length !== \fwrite($this->socket, $command, $length))
-            throw new Exception( "Failed to write on socket." );
+            throw new ReceiveStatusException( "Failed to write on socket.");
 
         $data = \fread($this->socket, 4096);
 
         if($data === false)
-            throw new Exception( "Failed to read from socket." );
+            throw new ReceiveStatusException( "Failed to read from socket.");
 
         if(\strlen($data) < 5 || $data[0] != $command[2])
             return null;
@@ -83,14 +86,14 @@ class Query extends AbstractStatus
      * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
      *
      * @return string
-     * @throws Exception
+     * @throws ReceiveStatusException
      */
     protected function getChallenge(): string
     {
         $data = $this->writeData(0x09);
 
         if(!$data)
-            throw new Exception('Failed to receive challenge.');
+            throw new ReceiveStatusException('Failed to receive challenge.');
 
         return \pack('N', $data);
     }
@@ -98,7 +101,7 @@ class Query extends AbstractStatus
     /**
      * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
      *
-     * @throws Exception
+     * @throws ReceiveStatusException
      */
     protected function getStatus(): void
     {
@@ -106,19 +109,19 @@ class Query extends AbstractStatus
         $data = $this->writeData(0x00, $append);
 
         if(!$data)
-            throw new Exception('Failed to receive status.' );
+            throw new ReceiveStatusException('Failed to receive status.');
 
-        $data = \substr($data,11);
+        $data = \substr($data, 11);
         $data = \explode("\x00\x00\x01player_\x00\x00", $data);
 
         if(\count($data) !== 2)
-            throw new Exception('Failed to parse server\'s response.');
+            throw new ReceiveStatusException('Failed to parse server\'s response.');
 
         $players = \substr($data[1], 0, -2);
         $data    = \explode("\x00", $data[0]);
 
         $info = [];
-        for ($i = 1; $i < count($data); $i+=2)
+        for ($i = 1; $i < \count($data); $i+=2)
             $info[$data[$i-1]] = $data[$i];
 
         $this->info = $this->encoding($info);
