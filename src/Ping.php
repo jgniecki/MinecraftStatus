@@ -13,7 +13,6 @@ namespace DevLancer\MinecraftStatus;
 use DevLancer\MinecraftStatus\Exception\ConnectionException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
-use DevLancer\MinecraftStatus\Exception\TimeoutException;
 
 /**
  * Class Ping
@@ -24,7 +23,6 @@ class Ping extends AbstractStatus
     /**
      * @inheritDoc
      * @return Ping
-     * @throws TimeoutException
      * @throws ConnectionException Thrown when failed to connect to resource
      * @throws ReceiveStatusException Thrown when the status has not been obtained or resolved
      */
@@ -41,9 +39,7 @@ class Ping extends AbstractStatus
     /**
      * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
      *
-     * @throws ReceiveStatusException
-     * @throws TimeoutException
-     *
+     * @throws ReceiveStatusException*
      */
     protected function getStatus(): void
     {
@@ -71,7 +67,7 @@ class Ping extends AbstractStatus
 
         do {
             if (\microtime(true) - $timestart > $this->timeout)
-                throw new TimeoutException( 'Server read timed out' );
+                throw new ReceiveStatusException( 'Server read timed out' );
 
             $remainder = $length - \strlen($data);
             if ($remainder <= 0)
