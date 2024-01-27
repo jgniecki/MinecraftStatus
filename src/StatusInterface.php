@@ -54,7 +54,7 @@ interface StatusInterface
 
     /**
      * Returns the obtained host information
-     * @return string[]
+     * @return array<string, mixed>
      */
     public function getInfo():array;
 }
