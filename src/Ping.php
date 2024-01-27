@@ -10,7 +10,10 @@
 namespace DevLancer\MinecraftStatus;
 
 
-use DevLancer\MinecraftStatus\Exception\Exception;
+use DevLancer\MinecraftStatus\Exception\ConnectionException;
+use DevLancer\MinecraftStatus\Exception\NotConnectedException;
+use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
+use DevLancer\MinecraftStatus\Exception\TimeoutException;
 
 /**
  * Class Ping
@@ -21,7 +24,9 @@ class Ping extends AbstractStatus
     /**
      * @inheritDoc
      * @return Ping
-     * @throws Exception
+     * @throws ConnectionException
+     * @throws TimeoutException
+     * @throws ReceiveStatusException
      */
     public function connect(): self
     {
@@ -36,7 +41,9 @@ class Ping extends AbstractStatus
     /**
      * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
      *
-     * @throws Exception
+     * @throws ReceiveStatusException
+     * @throws TimeoutException
+     *
      */
     protected function getStatus(): void
     {
@@ -53,18 +60,18 @@ class Ping extends AbstractStatus
 
         $length = $this->readVarInt(); // full packet length
         if($length < 10)
-            throw new Exception('Failed to receive status.');
+                throw new ReceiveStatusException('Failed to receive status.');
 
         $this->readVarInt(); // packet type, in server ping it's 0
         $length = $this->readVarInt(); // string length
         if($length < 2)
-            throw new Exception('Failed to receive status.');
+            throw new ReceiveStatusException('Failed to receive status.');
 
         $data = "";
 
         do {
             if (\microtime(true) - $timestart > $this->timeout)
-                throw new Exception( 'Server read timed out' );
+                throw new TimeoutException( 'Server read timed out' );
 
             $remainder = $length - \strlen($data);
             if ($remainder <= 0)
@@ -72,33 +79,36 @@ class Ping extends AbstractStatus
 
             $block = \fread($this->socket, $remainder);
             if (!$block)
-                throw new Exception( 'Server returned too few data' );
+                throw new ReceiveStatusException( 'Server returned too few data' );
 
             $data .= $block;
         } while(\strlen($data) < $length);
 
         $result = \json_decode($data, true);
         if (\json_last_error() !== JSON_ERROR_NONE)
-            throw new Exception( 'JSON parsing failed: ' . \json_last_error_msg( ) );
+            throw new ReceiveStatusException( 'JSON parsing failed: ' . \json_last_error_msg( ) );
 
         if (!\is_array($result))
-            throw new Exception( 'The server did not return the information' );
+            throw new ReceiveStatusException( 'The server did not return the information' );
 
         $result = $this->encoding($result);
+        $this->resolvePlayers($result);
+        $this->info = $result;
+    }
 
-        if (isset($result['players']['sample'])) {
-            foreach ($result['players']['sample'] as $value)
+    protected function resolvePlayers(array $data): void
+    {
+        if (isset($data['players']['sample'])) {
+            foreach ($data['players']['sample'] as $value)
                 $this->players[] = $value['name'];
         }
-
-        $this->info = $result;
     }
 
     /**
      * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
      *
      * @return int
-     * @throws Exception
+     * @throws ReceiveStatusException
      */
     private function readVarInt(): int
     {
@@ -114,7 +124,7 @@ class Ping extends AbstractStatus
             $i |= ($k&0x7F) << $j++ * 7;
 
             if($j>5)
-                throw new Exception( 'VarInt too big' );
+                throw new ReceiveStatusException( 'VarInt too big' );
 
             if(($k&0x80) != 128)
                 break;
@@ -125,7 +135,7 @@ class Ping extends AbstractStatus
 
     /**
      * @return int
-     * @throws Exception
+     * @throws NotConnectedException
      */
     public function getCountPlayers(): int
     {
@@ -134,7 +144,7 @@ class Ping extends AbstractStatus
 
     /**
      * @return int
-     * @throws Exception
+     * @throws NotConnectedException
      */
     public function getMaxPlayers(): int
     {
@@ -143,7 +153,7 @@ class Ping extends AbstractStatus
 
     /**
      * @return string
-     * @throws Exception
+     * @throws NotConnectedException
      */
     public function getFavicon(): string
     {
