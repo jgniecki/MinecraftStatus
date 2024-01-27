@@ -1,7 +1,7 @@
 # Minecraft Status
 ![](https://img.shields.io/packagist/l/dev-lancer/minecraft-status?style=for-the-badge)
 ![](https://img.shields.io/packagist/dt/dev-lancer/minecraft-status?style=for-the-badge)
-![](https://img.shields.io/github/v/release/developerlancer/minecraftstatus?style=for-the-badge)
+![](https://img.shields.io/github/v/release/DeveloperLancer/MinecraftStatus?style=for-the-badge)
 ![](https://img.shields.io/packagist/php-v/dev-lancer/minecraft-status?style=for-the-badge)
 
 MinecraftStatus library allows you to communicate with minecraft servers using the most popular protocols.
@@ -180,6 +180,11 @@ getCountPlayers(): int
 Returns the number of server slots
 ```php
 getMaxPlayers(): int
+```
+
+Returns the favicon as a string
+```php
+getFavicon(): string
 ```
 
 ### Use independently of the connection
