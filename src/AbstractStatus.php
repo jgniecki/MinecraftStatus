@@ -60,6 +60,7 @@ abstract class AbstractStatus implements StatusInterface
      * @param int $port
      * @param int $timeout
      * @param bool $resolveSRV
+     * @throws \InvalidArgumentException The $timeout must be a positive integer
      */
     public function __construct(string $host, int $port = 25565, int $timeout = 3, bool $resolveSRV = true)
     {
@@ -78,7 +79,7 @@ abstract class AbstractStatus implements StatusInterface
     }
 
     /**
-     * @throws ConnectionException
+     * @throws ConnectionException Thrown when failed to connect to resource
      */
     protected function _connect(string $host, int $port): void
     {

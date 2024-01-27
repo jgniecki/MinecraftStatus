@@ -23,8 +23,8 @@ class Query extends AbstractStatus
     /**
      * @inheritDoc
      * @return Query
-     * @throws ReceiveStatusException
-     * @throws ConnectionException
+     * @throws ConnectionException Thrown when failed to connect to resource
+     * @throws ReceiveStatusException Thrown when the status has not been obtained or resolved
      */
     public function connect(): self
     {

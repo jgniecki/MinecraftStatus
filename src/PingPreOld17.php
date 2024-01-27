@@ -22,8 +22,8 @@ class PingPreOld17 extends Ping
     /**
      * @inheritDoc
      * @return PingPreOld17
-     * @throws ConnectionException
-     * @throws ReceiveStatusException
+     * @throws ConnectionException Thrown when failed to connect to resource
+     * @throws ReceiveStatusException Thrown when the status has not been obtained or resolved
      */
     public function connect(): PingPreOld17
     {

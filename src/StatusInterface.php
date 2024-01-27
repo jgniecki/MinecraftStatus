@@ -23,7 +23,7 @@ interface StatusInterface
     public function connect(): StatusInterface;
 
     /**
-     * Returns whether the connection was successful
+     * Returns information about whether the connection was successful, it can also tell if the server is online
      * @return bool
      */
     public function isConnected(): bool;

@@ -24,9 +24,9 @@ class Ping extends AbstractStatus
     /**
      * @inheritDoc
      * @return Ping
-     * @throws ConnectionException
      * @throws TimeoutException
-     * @throws ReceiveStatusException
+     * @throws ConnectionException Thrown when failed to connect to resource
+     * @throws ReceiveStatusException Thrown when the status has not been obtained or resolved
      */
     public function connect(): self
     {

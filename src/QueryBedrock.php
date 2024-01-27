@@ -23,6 +23,7 @@ class QueryBedrock extends Query
      * QueryBedrock constructor.
      *
      * @inheritDoc
+     * @throws \InvalidArgumentException The $timeout must be a positive integer
      */
     public function __construct(string $host, int $port = 19132, int $timeout = 3, bool $resolveSRV = true)
     {
@@ -32,8 +33,8 @@ class QueryBedrock extends Query
     /**
      * @inheritDoc
      * @return QueryBedrock
-     * @throws ConnectionException
-     * @throws ReceiveStatusException
+     * @throws ConnectionException Thrown when failed to connect to resource
+     * @throws ReceiveStatusException Thrown when the status has not been obtained or resolved
      */
     public function connect(): QueryBedrock
     {
