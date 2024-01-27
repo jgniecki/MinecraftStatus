@@ -10,7 +10,8 @@
 namespace DevLancer\MinecraftStatus;
 
 
-use DevLancer\MinecraftStatus\Exception\Exception;
+use DevLancer\MinecraftStatus\Exception\ConnectionException;
+use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
 
 /**
  * Class PingPreOld17
@@ -21,7 +22,8 @@ class PingPreOld17 extends Ping
     /**
      * @inheritDoc
      * @return PingPreOld17
-     * @throws Exception
+     * @throws ConnectionException
+     * @throws ReceiveStatusException
      */
     public function connect(): PingPreOld17
     {
@@ -33,34 +35,34 @@ class PingPreOld17 extends Ping
      * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
      *
      * @inheritDoc
-     * @throws Exception
+     * @throws ReceiveStatusException
      */
     protected function getStatus(): void
     {
         \fwrite($this->socket, "\xFE\x01");
         $data = \fread($this->socket, 512);
         if(empty($data))
-            throw new Exception('Failed to receive status.' );
+            throw new ReceiveStatusException('Failed to receive status.');
 
         $length = \strlen($data);
         if( $length < 4 || $data[0] !== "\xFF" )
-            throw new Exception('Failed to receive status.' );
+            throw new ReceiveStatusException('Failed to receive status.');
 
         $data = \substr($data, 3); // Strip packet header (kick message packet and short length)
         $data = \iconv('UTF-16BE', 'UTF-8', $data);
 
         // Are we dealing with Minecraft 1.4+ server?
         if($data[1] === "\xA7" && $data[2] === "\x31") {
-            $data = \explode( "\x00", $data );
-            $result['description']['text'] = $data[3];
+            $data = \explode( "\x00", $data);
+            $result['description']['text'] = $data[3] ?? null;
             $result['players'] = [
-                "max" => (isset($data[5])) ? (int) $data[5] : 0,
-                "online" => (isset($data[4])) ? (int) $data[4] : 0,
+                "max" => (int) ($data[5] ?? 0),
+                "online" => (int) ($data[4] ?? 0),
             ];
 
             $result['version'] = [
                 'name' => $data[2] ?? null,
-                'protocol' => (isset($data[1]))? (int) $data[1] : 0
+                'protocol' => (int) ($data[1] ?? 0)
             ];
 
             $this->info = $this->encoding($result);
@@ -70,8 +72,8 @@ class PingPreOld17 extends Ping
         $data = \explode("\xA7", $data);
         $result['description']['text'] = \substr($data[0], 0, -1);
         $result['players'] = [
-            "max" =>  (isset($data[2])) ? (int) $data[2] : 0,
-            "online" => (isset($data[1])) ? (int) $data[1] : 0,
+            "max" => (int) ($data[2] ?? 0),
+            "online" => (int) ($data[1] ?? 0),
         ];
 
         $result['version'] = [
