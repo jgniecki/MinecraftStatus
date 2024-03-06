@@ -28,11 +28,6 @@ interface StatusInterface
      */
     public function isConnected(): bool;
 
-    /**
-     * Returns a potential list of players
-     * @return string[]
-     */
-    public function getPlayers(): array;
 
     /**
      * Returns the potential number of players
