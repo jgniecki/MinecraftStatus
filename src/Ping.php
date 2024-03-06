@@ -1,40 +1,22 @@
 <?php declare(strict_types=1);
 /**
- * @author Jakub Gniecki
- * @copyright Jakub Gniecki <kubuspl@onet.eu>
+ * @author Jakub Gniecki <kubuspl@onet.eu>
+ * @copyright
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
 
-
 namespace DevLancer\MinecraftStatus;
 
-
-use DevLancer\MinecraftStatus\Exception\ConnectionException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
 
-/**
- * Class Ping
- * @package DevLancer\MinecraftStatus
- */
-class Ping extends AbstractStatus
+class Ping extends AbstractPing implements PlayerListInterface, FaviconInterface
 {
     /**
-     * @inheritDoc
-     * @return Ping
-     * @throws ConnectionException Thrown when failed to connect to resource
-     * @throws ReceiveStatusException Thrown when the status has not been obtained or resolved
+     * @var string[]
      */
-    public function connect(): self
-    {
-        if ($this->isConnected())
-            $this->disconnect();
-
-        $this->_connect($this->host, $this->port);
-        $this->getStatus();
-        return $this;
-    }
+    protected array $players = [];
 
     /**
      * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
@@ -56,7 +38,7 @@ class Ping extends AbstractStatus
 
         $length = $this->readVarInt(); // full packet length
         if($length < 10)
-                throw new ReceiveStatusException('Failed to receive status.');
+            throw new ReceiveStatusException('Failed to receive status.');
 
         $this->readVarInt(); // packet type, in server ping it's 0
         $length = $this->readVarInt(); // string length
@@ -88,7 +70,7 @@ class Ping extends AbstractStatus
             throw new ReceiveStatusException( 'The server did not return the information' );
 
         $result = $this->encoding($result);
-        $this->resolvePlayers($result);
+        $this->players = $this->resolvePlayerList($result);
         $this->info = $result;
     }
 
@@ -96,59 +78,26 @@ class Ping extends AbstractStatus
      * @param array $data<string, mixed>
      * @return void
      */
-    protected function resolvePlayers(array $data): void
+    protected function resolvePlayerList(array $data): array
     {
         if (isset($data['players']['sample'])) {
             foreach ($data['players']['sample'] as $value)
-                $this->players[] = $value['name'];
-        }
-    }
-
-    /**
-     * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
-     *
-     * @return int
-     * @throws ReceiveStatusException
-     */
-    private function readVarInt(): int
-    {
-        $i = 0;
-        $j = 0;
-
-        while(true) {
-            $k = @\fgetc($this->socket);
-            if($k === false)
-                return 0;
-
-            $k = \ord($k);
-            $i |= ($k&0x7F) << $j++ * 7;
-
-            if($j>5)
-                throw new ReceiveStatusException( 'VarInt too big' );
-
-            if(($k&0x80) != 128)
-                break;
+                $this->players[] = $value;
         }
 
-        return $i;
+        return [];
     }
 
     /**
-     * @return int
+     * @inheritDoc
      * @throws NotConnectedException
      */
-    public function getCountPlayers(): int
+    public function getPlayers(): array
     {
-        return (int) ($this->getInfo()['players']['online'] ?? 0);
-    }
+        if (!$this->isConnected())
+            throw new NotConnectedException('The connection has not been established.');
 
-    /**
-     * @return int
-     * @throws NotConnectedException
-     */
-    public function getMaxPlayers(): int
-    {
-        return (int) ($this->getInfo()['players']['max'] ?? 0);
+        return $this->players;
     }
 
     /**
