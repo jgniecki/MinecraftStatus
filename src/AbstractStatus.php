@@ -46,11 +46,6 @@ abstract class AbstractStatus implements StatusInterface
     protected array $info = [];
 
     /**
-     * @var string[]
-     */
-    protected array $players = [];
-
-    /**
      * @var string
      */
     protected string $encoding = 'UTF-8';
@@ -114,18 +109,6 @@ abstract class AbstractStatus implements StatusInterface
     public function isConnected(): bool
     {
         return is_resource($this->socket);
-    }
-
-    /**
-     * @inheritDoc
-     * @throws NotConnectedException
-     */
-    public function getPlayers(): array
-    {
-        if (!$this->isConnected())
-            throw new NotConnectedException('The connection has not been established.');
-
-        return $this->players;
     }
 
     /**
