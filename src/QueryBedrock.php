@@ -17,7 +17,7 @@ use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
  * Class QueryBedrock
  * @package DevLancer\MinecraftStatus
  */
-class QueryBedrock extends Query
+class QueryBedrock extends AbstractQuery
 {
     /**
      * QueryBedrock constructor.
@@ -45,7 +45,6 @@ class QueryBedrock extends Query
     /**
      * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
      *
-     * @inheritDoc
      * @throws ReceiveStatusException
      */
     protected function getStatus(): void
