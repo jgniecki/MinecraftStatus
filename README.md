@@ -79,9 +79,6 @@ $query->connect();
 print_r($query->getInfo());
 ```
 
-**:warning: `QueryBedrock` class provides `getPlayers()` method which is inherited from `Query` class, using it in `QueryBedrock` instance will always return an empty array**
-
-
 ### Ping and PingPreOld17
 
 Example: [Ping](examples/ping.php)
@@ -105,10 +102,6 @@ print_r($ping->getInfo());
 ```
 
 If you want to get `ping` info from a server that uses a version older than Minecraft 1.7, then use class `PingPreOld17` instead of `Ping`.
-
-**:warning: `PingPreOld17` class provides `getFavicon()` method which is inherited from `Ping` class, using it in `PingPreOld17` instance will always return an empty string**
-
-**:warning: `PingPreOld17` class provides `getPlayers()` method which is inherited from `Ping` class, using it in `PingPreOld17` instance will always return an empty array**
 
 ## Methods
 
