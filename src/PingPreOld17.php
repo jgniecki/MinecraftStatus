@@ -17,7 +17,7 @@ use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
  * Class PingPreOld17
  * @package DevLancer\MinecraftStatus
  */
-class PingPreOld17 extends Ping
+class PingPreOld17 extends AbstractPing
 {
     /**
      * @inheritDoc
