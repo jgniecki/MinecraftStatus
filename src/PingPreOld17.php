@@ -34,11 +34,12 @@ class PingPreOld17 extends AbstractPing
     /**
      * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
      *
-     * @inheritDoc
+     *
      * @throws ReceiveStatusException
      */
     protected function getStatus(): void
     {
+        $timestart = \microtime(true); // for read timeout purposes
         \fwrite($this->socket, "\xFE\x01");
         $data = \fread($this->socket, 512);
         if(empty($data))
@@ -47,6 +48,8 @@ class PingPreOld17 extends AbstractPing
         $length = \strlen($data);
         if( $length < 4 || $data[0] !== "\xFF" )
             throw new ReceiveStatusException('Failed to receive status.');
+
+        $this->delay = (int) floor((microtime(true) - $timestart) * 1000);
 
         $data = \substr($data, 3); // Strip packet header (kick message packet and short length)
         $data = \iconv('UTF-16BE', 'UTF-8', $data);
@@ -74,11 +77,6 @@ class PingPreOld17 extends AbstractPing
         $result['players'] = [
             "max" => (int) ($data[2] ?? 0),
             "online" => (int) ($data[1] ?? 0),
-        ];
-
-        $result['version'] = [
-            'name' => '1.3',
-            'protocol' => 0
         ];
 
         $this->info = $this->encoding($result);
