@@ -25,15 +25,13 @@ class Ping extends AbstractPing implements PlayerListInterface, FaviconInterface
      */
     protected function getStatus(): void
     {
-        $timestart = \microtime(true); // for read timeout purposes
-
         $data = "\x00"; // packet ID = 0 (varint)
         $data .= "\xff\xff\xff\xff\x0f"; //Protocol version (varint)
         $data .= \pack('c', \strlen( $this->host)) . $this->host; // Server (varint len + UTF-8 addr)
         $data .= \pack('n', $this->port); // Server port (unsigned short)
         $data .= "\x01"; // Next state: status (varint)
         $data = \pack('c', \strlen($data)) . $data; // prepend length of packet ID + data
-
+        $timestart = \microtime(true); // for read timeout purposes
         \fwrite($this->socket, $data . "\x01\x00"); // handshake
 
         $length = $this->readVarInt(); // full packet length
@@ -56,12 +54,14 @@ class Ping extends AbstractPing implements PlayerListInterface, FaviconInterface
                 break;
 
             $block = \fread($this->socket, $remainder);
+            if ($this->delay == 0)
+                $this->delay = (int) floor((microtime(true) - $timestart) * 1000);
+
             if (!$block)
                 throw new ReceiveStatusException( 'Server returned too few data' );
 
             $data .= $block;
         } while(\strlen($data) < $length);
-
         $result = \json_decode($data, true);
         if (\json_last_error() !== JSON_ERROR_NONE)
             throw new ReceiveStatusException( 'JSON parsing failed: ' . \json_last_error_msg( ) );

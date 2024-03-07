@@ -18,8 +18,10 @@ use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
  * Class AbstractPing
  * @package DevLancer\MinecraftStatus
  */
-abstract class AbstractPing extends AbstractStatus
+abstract class AbstractPing extends AbstractStatus implements DelayInterface
 {
+    protected int $delay = 0;
+
     /**
      * @inheritDoc
      * @return AbstractPing
@@ -34,6 +36,11 @@ abstract class AbstractPing extends AbstractStatus
         $this->_connect($this->host, $this->port);
         $this->getStatus();
         return $this;
+    }
+
+    public function getDelay(): int
+    {
+        return $this->delay;
     }
 
     abstract protected function getStatus();
