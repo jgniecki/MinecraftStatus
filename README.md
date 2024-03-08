@@ -116,6 +116,7 @@ If you want to get `ping` info from a server that uses a version older than Mine
 | getMaxPlayers()   |   X   |       X      |   X  |       X      |
 | getInfo()         |   X   |       X      |   X  |       X      |
 | getFavicon()      |       |              |   X  |              |
+| getDelay()        |       |              |   X  |              |
 | setTimeout()      |   X   |       X      |   X  |       X      |
 | getTimeout()      |   X   |       X      |   X  |       X      |
 | setEncoding()     |   X   |       X      |   X  |       X      |
@@ -178,6 +179,11 @@ getMaxPlayers(): int
 Returns the favicon as a string
 ```php
 getFavicon(): string
+```
+
+Returns the connection delay [ms]
+```php
+getDelay(): int
 ```
 
 ### Use independently of the connection

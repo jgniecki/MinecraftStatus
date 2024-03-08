@@ -11,12 +11,24 @@ namespace DevLancer\MinecraftStatus;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
 
-class Ping extends AbstractPing implements PlayerListInterface, FaviconInterface
+class Ping extends AbstractPing implements PlayerListInterface, FaviconInterface, DelayInterface
 {
     /**
      * @var string[]
      */
     protected array $players = [];
+
+    protected int $delay = 0;
+
+    public function connect(): Ping
+    {
+        parent::connect();
+        return $this;
+    }
+    public function getDelay(): int
+    {
+        return $this->delay;
+    }
 
     /**
      * Copied from https://github.com/xPaw/PHP-Minecraft-Query/

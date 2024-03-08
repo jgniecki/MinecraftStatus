@@ -39,7 +39,6 @@ class PingPreOld17 extends AbstractPing
      */
     protected function getStatus(): void
     {
-        $timestart = \microtime(true); // for read timeout purposes
         \fwrite($this->socket, "\xFE\x01");
         $data = \fread($this->socket, 512);
         if(empty($data))
@@ -49,7 +48,6 @@ class PingPreOld17 extends AbstractPing
         if( $length < 4 || $data[0] !== "\xFF" )
             throw new ReceiveStatusException('Failed to receive status.');
 
-        $this->delay = (int) floor((microtime(true) - $timestart) * 1000);
 
         $data = \substr($data, 3); // Strip packet header (kick message packet and short length)
         $data = \iconv('UTF-16BE', 'UTF-8', $data);

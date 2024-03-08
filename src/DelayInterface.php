@@ -10,5 +10,10 @@ namespace DevLancer\MinecraftStatus;
 
 interface DelayInterface
 {
+    /**
+     * Returns the connection delay [ms]
+     *
+     * @return int
+     */
     public function getDelay(): int;
 }
