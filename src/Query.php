@@ -49,25 +49,26 @@ class Query extends AbstractQuery implements PlayerListInterface
         if(\count($data) !== 2)
             throw new ReceiveStatusException('Failed to parse server\'s response.');
 
-        $players = \substr($data[1], 0, -2);
-        $data    = \explode("\x00", $data[0]);
+        if (is_string($data[1]))
+            $this->players = $this->resolvePlayerList($data[1]);
 
+        $data = \explode("\x00", $data[0]);
         $info = [];
         for ($i = 1; $i < \count($data); $i+=2)
             $info[$data[$i-1]] = $data[$i];
 
         $this->info = $this->encoding($info);
         $this->info['hostip'] = \gethostbyname($this->host);
-        if (!empty($players))
-            $this->players = $this->resolvePlayerList($this->encoding(\explode("\x00", $players)));
     }
 
     /**
-     * @param array $data<string, mixed>
+     * @param string $data
      * @return void
      */
-    protected function resolvePlayerList(array $data): array
+    protected function resolvePlayerList(string $data): array
     {
-        return $data;
+        $players = \substr($data, 0, -2);
+        $players = \explode("\x00", $players);
+        return $this->encoding($players);
     }
 }
