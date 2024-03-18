@@ -17,7 +17,7 @@ trait ResolveSRVTrait
     protected function resolveSRV(string $host): array
     {
         if(ip2long($host) !== false)
-            return [];
+            return ['host' => null, 'port' => null];
 
         $record = @dns_get_record( '_minecraft._tcp.' . $host, DNS_SRV );
 
