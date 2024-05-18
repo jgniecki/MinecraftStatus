@@ -108,22 +108,24 @@ If you want to get `ping` info from a server that uses a version older than Mine
 ### List of methods
 |                   | Query | QueryBedrock | Ping | PingPreOld17 |
 |-------------------|-------|--------------|------|--------------|
-| connect()         |   X   |       X      |   X  |       X      |
-| isConnected()     |   X   |       X      |   X  |       X      |
-| disconnect()      |   X   |       X      |   X  |       X      |
-| getPlayers()      |   X   |              |   X  |              |
-| getCountPlayers() |   X   |       X      |   X  |       X      |
-| getMaxPlayers()   |   X   |       X      |   X  |       X      |
-| getInfo()         |   X   |       X      |   X  |       X      |
+| connect()         | X     |       X      |   X  |       X      |
+| isConnected()     | X     |       X      |   X  |       X      |
+| disconnect()      | X     |       X      |   X  |       X      |
+| getPlayers()      | X     |              |   X  |              |
+| getCountPlayers() | X     |       X      |   X  |       X      |
+| getMaxPlayers()   | X     |       X      |   X  |       X      |
+| getInfo()         | X     |       X      |   X  |       X      |
 | getFavicon()      |       |              |   X  |              |
 | getDelay()        |       |              |   X  |              |
-| setTimeout()      |   X   |       X      |   X  |       X      |
-| getTimeout()      |   X   |       X      |   X  |       X      |
-| setEncoding()     |   X   |       X      |   X  |       X      |
-| getEncoding()     |   X   |       X      |   X  |       X      |
-| isResolveSRV()    |   X   |       X      |   X  |       X      |
-| getHost()         |   X   |       X      |   X  |       X      |
-| getPort()         |   X   |       X      |   X  |       X      |
+| setTimeout()      | X     |       X      |   X  |       X      |
+| getTimeout()      | X     |       X      |   X  |       X      |
+| setEncoding()     | X     |       X      |   X  |       X      |
+| getEncoding()     | X     |       X      |   X  |       X      |
+| isResolveSRV()    | X     |       X      |   X  |       X      |
+| getHost()         | X     |       X      |   X  |       X      |
+| getPort()         | X     |       X      |   X  |       X      |
+| getMotd()         | X     |       X      |   X  |       X      |
+| getProtocol()     |       |       X      |   X  |       X      | 
 
 ### Use before connecting
 
@@ -184,6 +186,16 @@ getFavicon(): string
 Returns the connection delay [ms]
 ```php
 getDelay(): int
+```
+
+Returns a motd of the server
+```php
+getMotd(): string
+```
+
+Returns the server protocol number
+```php
+getProtocol(): int
 ```
 
 ### Use independently of the connection
