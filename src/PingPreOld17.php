@@ -53,6 +53,9 @@ class PingPreOld17 extends AbstractPing
         $data = \substr($data, 3); // Strip packet header (kick message packet and short length)
         $data = \iconv('UTF-16BE', 'UTF-8', $data);
 
+        if ($data === false)
+            throw new ReceiveStatusException('Failed to receive status.');
+
         // Are we dealing with Minecraft 1.4+ server?
         if($data[1] === "\xA7" && $data[2] === "\x31") {
             $data = \explode( "\x00", $data);
