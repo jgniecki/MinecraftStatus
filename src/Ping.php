@@ -88,7 +88,7 @@ class Ping extends AbstractPing implements PlayerListInterface, FaviconInterface
 
     /**
      * @param array $data<string, mixed>
-     * @return void
+     * @return array
      */
     protected function resolvePlayerList(array $data): array
     {

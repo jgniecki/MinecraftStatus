@@ -76,7 +76,7 @@ class Query extends AbstractQuery implements PlayerListInterface
 
     /**
      * @param string $data
-     * @return void
+     * @return array
      */
     protected function resolvePlayerList(string $data): array
     {
