@@ -28,7 +28,6 @@ interface StatusInterface
      */
     public function isConnected(): bool;
 
-
     /**
      * Returns the potential number of players
      * @return int
@@ -46,6 +45,12 @@ interface StatusInterface
      * @param int $timeout
      */
     public function setTimeout(int $timeout): void;
+
+    /**
+     * Gets server motd
+     * @return string
+     */
+    public function getMotd(): string;
 
     /**
      * Returns the obtained host information

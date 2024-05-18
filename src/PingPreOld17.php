@@ -11,6 +11,7 @@ namespace DevLancer\MinecraftStatus;
 
 
 use DevLancer\MinecraftStatus\Exception\ConnectionException;
+use DevLancer\MinecraftStatus\Exception\NotConnectedException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
 
 /**
@@ -78,5 +79,14 @@ class PingPreOld17 extends AbstractPing
         ];
 
         $this->info = $this->encoding($result);
+    }
+
+    /**
+     * @return string
+     * @throws NotConnectedException
+     */
+    public function getMotd(): string
+    {
+        return $this->getInfo()['description']['text'] ?? "";
     }
 }

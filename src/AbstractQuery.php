@@ -99,4 +99,13 @@ abstract class AbstractQuery extends AbstractStatus
     }
 
     abstract protected function getStatus(): void;
+
+    /**
+     * @return string
+     * @throws NotConnectedException
+     */
+    public function getMotd(): string
+    {
+        return $this->getInfo()['hostname'] ?? "";
+    }
 }

@@ -120,4 +120,14 @@ class Ping extends AbstractPing implements PlayerListInterface, FaviconInterface
     {
         return $this->getInfo()['favicon'] ?? "";
     }
+
+    /**
+     * @return string
+     * @throws NotConnectedException
+     */
+    public function getMotd(): string
+    {
+        $motd = $this->getInfo()['description'] ?? "";
+        return (is_array($motd)) ? json_encode($motd) : $motd;
+    }
 }
