@@ -11,13 +11,14 @@ namespace DevLancer\MinecraftStatus;
 
 
 use DevLancer\MinecraftStatus\Exception\ConnectionException;
+use DevLancer\MinecraftStatus\Exception\NotConnectedException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
 
 /**
  * Class QueryBedrock
  * @package DevLancer\MinecraftStatus
  */
-class QueryBedrock extends AbstractQuery
+class QueryBedrock extends AbstractQuery implements ProtocolInterface
 {
     /**
      * QueryBedrock constructor.
@@ -90,7 +91,7 @@ class QueryBedrock extends AbstractQuery
         $info = [
             'game_id'          => $data[0] ?? null,
             'hostname'         => [],
-            'protocol'         => $data[2+$offset] ?? null,
+            'protocol'         => (int) ($data[2+$offset] ?? 0),
             'version'          => $data[3+$offset] ?? null,
             'numplayers'       => (isset($data[4+$offset]))? (int) $data[4+$offset] : 0,
             'maxplayers'       => (isset($data[5+$offset]))? (int) $data[5+$offset] : 0,
@@ -108,5 +109,16 @@ class QueryBedrock extends AbstractQuery
         $info['hostname'] = \implode(";", $info['hostname']);
 
         return $info;
+    }
+
+    /**
+     * Returns the server protocol number
+     *
+     * @return int
+     * @throws NotConnectedException
+     */
+    public function getProtocol(): int
+    {
+        return $this->getInfo()['protocol'];
     }
 }

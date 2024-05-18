@@ -18,7 +18,7 @@ use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
  * Class AbstractPing
  * @package DevLancer\MinecraftStatus
  */
-abstract class AbstractPing extends AbstractStatus
+abstract class AbstractPing extends AbstractStatus implements ProtocolInterface
 {
     /**
      * @inheritDoc
@@ -83,5 +83,16 @@ abstract class AbstractPing extends AbstractStatus
     public function getMaxPlayers(): int
     {
         return (int) ($this->getInfo()['players']['max'] ?? 0);
+    }
+
+    /**
+     * Returns the server protocol number
+     *
+     * @return int
+     * @throws NotConnectedException
+     */
+    public function getProtocol(): int
+    {
+        return (int) ($this->getInfo()['version']['protocol'] ?? 0);
     }
 }
