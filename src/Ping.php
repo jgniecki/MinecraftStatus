@@ -8,6 +8,7 @@
 
 namespace DevLancer\MinecraftStatus;
 
+use DevLancer\MinecraftStatus\Exception\ConnectionException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
 
@@ -20,6 +21,12 @@ class Ping extends AbstractPing implements PlayerListInterface, FaviconInterface
 
     protected int $delay = 0;
 
+    /**
+     * @inheritDoc
+     * @return Ping
+     * @throws ConnectionException Thrown when failed to connect to resource
+     * @throws ReceiveStatusException Thrown when the status has not been obtained or resolved
+     */
     public function connect(): Ping
     {
         parent::connect();
@@ -92,12 +99,13 @@ class Ping extends AbstractPing implements PlayerListInterface, FaviconInterface
      */
     protected function resolvePlayerList(array $data): array
     {
+        $players = [];
         if (isset($data['players']['sample'])) {
             foreach ($data['players']['sample'] as $value)
-                $this->players[] = $value;
+                $players[] = $value;
         }
 
-        return [];
+        return $players;
     }
 
     /**
