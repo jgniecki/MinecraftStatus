@@ -25,7 +25,7 @@ abstract class AbstractQuery extends AbstractStatus
      * @return AbstractQuery
      * @throws ConnectionException Thrown when failed to connect to resource
      */
-    public function connect(): self
+    public function connect(): StatusInterface
     {
         if ($this->isConnected())
             $this->disconnect();

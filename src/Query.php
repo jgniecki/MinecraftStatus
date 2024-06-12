@@ -25,7 +25,7 @@ class Query extends AbstractQuery implements PlayerListInterface
      * @throws ConnectionException Thrown when failed to connect to resource
      * @throws ReceiveStatusException Thrown when the status has not been obtained or resolved
      */
-    public function connect(): Query
+    public function connect(): StatusInterface
     {
         parent::connect();
         return $this;
