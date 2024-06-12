@@ -37,7 +37,7 @@ class QueryBedrock extends AbstractQuery implements ProtocolInterface
      * @throws ConnectionException Thrown when failed to connect to resource
      * @throws ReceiveStatusException Thrown when the status has not been obtained or resolved
      */
-    public function connect(): QueryBedrock
+    public function connect(): StatusInterface
     {
         parent::connect();
         return $this;

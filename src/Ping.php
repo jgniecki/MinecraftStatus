@@ -27,7 +27,7 @@ class Ping extends AbstractPing implements PlayerListInterface, FaviconInterface
      * @throws ConnectionException Thrown when failed to connect to resource
      * @throws ReceiveStatusException Thrown when the status has not been obtained or resolved
      */
-    public function connect(): Ping
+    public function connect(): StatusInterface
     {
         parent::connect();
         return $this;

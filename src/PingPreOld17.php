@@ -26,7 +26,7 @@ class PingPreOld17 extends AbstractPing
      * @throws ConnectionException Thrown when failed to connect to resource
      * @throws ReceiveStatusException Thrown when the status has not been obtained or resolved
      */
-    public function connect(): PingPreOld17
+    public function connect(): StatusInterface
     {
         parent::connect();
         return $this;
