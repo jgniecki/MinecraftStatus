@@ -1,6 +1,5 @@
 # Minecraft Status
 ![](https://img.shields.io/packagist/l/dev-lancer/minecraft-status?style=for-the-badge)
-![](https://img.shields.io/packagist/dt/dev-lancer/minecraft-status?style=for-the-badge)
 ![](https://img.shields.io/github/v/release/DeveloperLancer/MinecraftStatus?style=for-the-badge)
 ![](https://img.shields.io/packagist/php-v/dev-lancer/minecraft-status?style=for-the-badge)
 
