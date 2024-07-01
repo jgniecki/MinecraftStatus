@@ -9,7 +9,6 @@
 
 namespace DevLancer\MinecraftStatus\Exception;
 
-
 class Exception extends \Exception
 {
 

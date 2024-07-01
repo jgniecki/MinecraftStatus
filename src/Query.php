@@ -37,8 +37,9 @@ class Query extends AbstractQuery implements PlayerListInterface
      */
     public function getPlayers(): array
     {
-        if (!$this->isConnected())
+        if (!$this->isConnected()) {
             throw new NotConnectedException('The connection has not been established.');
+        }
 
         return $this->players;
     }
@@ -50,28 +51,32 @@ class Query extends AbstractQuery implements PlayerListInterface
      */
     protected function getStatus(): void
     {
-        $append = $this->getChallenge() . \pack('c*', 0x00, 0x00, 0x00, 0x00);
+        $append = $this->getChallenge() . pack('c*', 0x00, 0x00, 0x00, 0x00);
         $data = $this->writeData(0x00, $append);
 
-        if(!$data)
+        if (!$data) {
             throw new ReceiveStatusException('Failed to receive status.');
+        }
 
-        $data = \substr($data, 11);
-        $data = \explode("\x00\x00\x01player_\x00\x00", $data);
+        $data = substr($data, 11);
+        $data = explode("\x00\x00\x01player_\x00\x00", $data);
 
-        if(\count($data) !== 2)
+        if (count($data) !== 2) {
             throw new ReceiveStatusException('Failed to parse server\'s response.');
+        }
 
-        if (is_string($data[1]))
+        if (is_string($data[1])) {
             $this->players = $this->resolvePlayerList($data[1]);
+        }
 
-        $data = \explode("\x00", $data[0]);
+        $data = explode("\x00", $data[0]);
         $info = [];
-        for ($i = 1; $i < \count($data); $i+=2)
-            $info[$data[$i-1]] = $data[$i];
+        for ($i = 1; $i < count($data); $i += 2) {
+            $info[$data[$i - 1]] = $data[$i];
+        }
 
         $this->info = $this->encoding($info);
-        $this->info['hostip'] = \gethostbyname($this->host);
+        $this->info['hostip'] = gethostbyname($this->host);
     }
 
     /**
@@ -80,8 +85,8 @@ class Query extends AbstractQuery implements PlayerListInterface
      */
     protected function resolvePlayerList(string $data): array
     {
-        $players = \substr($data, 0, -2);
-        $players = \explode("\x00", $players);
+        $players = substr($data, 0, -2);
+        $players = explode("\x00", $players);
         return $this->encoding($players);
     }
 }
