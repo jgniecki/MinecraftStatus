@@ -9,7 +9,6 @@
 
 namespace DevLancer\MinecraftStatus;
 
-
 /**
  * Interface StatusInterface
  * @package DevLancer\MinecraftStatus
@@ -56,5 +55,5 @@ interface StatusInterface
      * Returns the obtained host information
      * @return array<string, mixed>
      */
-    public function getInfo():array;
+    public function getInfo(): array;
 }

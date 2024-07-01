@@ -16,10 +16,11 @@ trait ResolveSRVTrait
      */
     protected function resolveSRV(string $host): array
     {
-        if(ip2long($host) !== false)
+        if (ip2long($host) !== false) {
             return ['host' => null, 'port' => null];
+        }
 
-        $record = @dns_get_record( '_minecraft._tcp.' . $host, DNS_SRV );
+        $record = @dns_get_record('_minecraft._tcp.' . $host, DNS_SRV);
 
         return [
             'host' => $record[0]['target'] ?? null,

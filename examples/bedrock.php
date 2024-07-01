@@ -36,7 +36,7 @@ try {
 
 if ($queryBedrock->isConnected()) {
     echo sprintf("Server %s:%d is online", $queryBedrock->getHost(), $queryBedrock->getPort()) . "\n<br>";
-    print_r($queryBedrock->getInfo()); //When the table is empty, it probably failed to communicate properly with the server. Previously, a ReceiveStatusException exception was thrown
+    print_r($queryBedrock->getInfo()); //When the array is empty, it probably failed to communicate properly with the server. Previously, a ReceiveStatusException exception was thrown
 } else {
     echo sprintf("Server %s:%d is offline", $queryBedrock->getHost(), $queryBedrock->getPort()) . "\n<br>";
 }

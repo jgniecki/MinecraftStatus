@@ -9,7 +9,6 @@
 
 namespace DevLancer\MinecraftStatus;
 
-
 use DevLancer\MinecraftStatus\Exception\ConnectionException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
@@ -28,8 +27,9 @@ abstract class AbstractPing extends AbstractStatus implements ProtocolInterface
      */
     public function connect(): StatusInterface
     {
-        if ($this->isConnected())
+        if ($this->isConnected()) {
             $this->disconnect();
+        }
 
         $this->_connect($this->host, $this->port);
         $this->getStatus();
@@ -37,6 +37,35 @@ abstract class AbstractPing extends AbstractStatus implements ProtocolInterface
     }
 
     abstract protected function getStatus();
+
+    /**
+     * @return int
+     * @throws NotConnectedException
+     */
+    public function getCountPlayers(): int
+    {
+        return (int)($this->getInfo()['players']['online'] ?? 0);
+    }
+
+    /**
+     * @return int
+     * @throws NotConnectedException
+     */
+    public function getMaxPlayers(): int
+    {
+        return (int)($this->getInfo()['players']['max'] ?? 0);
+    }
+
+    /**
+     * Returns the server protocol number
+     *
+     * @return int
+     * @throws NotConnectedException
+     */
+    public function getProtocol(): int
+    {
+        return (int)($this->getInfo()['version']['protocol'] ?? 0);
+    }
 
     /**
      * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
@@ -49,50 +78,24 @@ abstract class AbstractPing extends AbstractStatus implements ProtocolInterface
         $i = 0;
         $j = 0;
 
-        while(true) {
-            $k = @\fgetc($this->socket);
-            if($k === false)
+        while (true) {
+            $k = @fgetc($this->socket);
+            if ($k === false) {
                 return 0;
+            }
 
-            $k = \ord($k);
-            $i |= ($k&0x7F) << $j++ * 7;
+            $k = ord($k);
+            $i |= ($k & 0x7F) << $j++ * 7;
 
-            if($j>5)
-                throw new ReceiveStatusException( 'VarInt too big' );
+            if ($j > 5) {
+                throw new ReceiveStatusException('VarInt too big');
+            }
 
-            if(($k&0x80) != 128)
+            if (($k & 0x80) != 128) {
                 break;
+            }
         }
 
         return $i;
-    }
-
-    /**
-     * @return int
-     * @throws NotConnectedException
-     */
-    public function getCountPlayers(): int
-    {
-        return (int) ($this->getInfo()['players']['online'] ?? 0);
-    }
-
-    /**
-     * @return int
-     * @throws NotConnectedException
-     */
-    public function getMaxPlayers(): int
-    {
-        return (int) ($this->getInfo()['players']['max'] ?? 0);
-    }
-
-    /**
-     * Returns the server protocol number
-     *
-     * @return int
-     * @throws NotConnectedException
-     */
-    public function getProtocol(): int
-    {
-        return (int) ($this->getInfo()['version']['protocol'] ?? 0);
     }
 }
