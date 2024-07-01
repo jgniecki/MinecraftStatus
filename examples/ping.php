@@ -36,7 +36,7 @@ try {
 
 if ($ping->isConnected()) {
     echo sprintf("Server %s:%d is online", $ping->getHost(), $ping->getPort()) . "\n<br>";
-    print_r($ping->getInfo()); //When the table is empty, it probably failed to communicate properly with the server. Previously, a ReceiveStatusException exception was thrown
+    print_r($ping->getInfo()); //When the array is empty, it probably failed to communicate properly with the server. Previously, a ReceiveStatusException exception was thrown
     if ($ping->getInfo())
         echo '<img width="64" height="64" src="' . str_replace("\n", "", $ping->getFavicon()) . '">';
     print_r($ping->getPlayers());
