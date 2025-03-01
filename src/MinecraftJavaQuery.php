@@ -13,7 +13,7 @@ use DevLancer\MinecraftStatus\Exception\ConnectionException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
 
-class MinecraftJavaQuery extends AbstractStatus implements PlayerListInterface
+class MinecraftJavaQuery extends AbstractStatus implements MinecraftJavaQueryInterface
 {
     /**
      * @var string[]
