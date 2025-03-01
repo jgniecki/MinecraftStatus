@@ -20,7 +20,13 @@
     "autoload": {
         "psr-4": {
             "DevLancer\\MinecraftStatus\\": "src/"
-        }
+        },
+        "classmap": [
+            "src/MinecraftBedrockStatus.php",
+            "src/MinecraftJavaPreOld17Status.php",
+            "src/MinecraftJavaQuery.php",
+            "src/MinecraftJavaStatus.php"
+        ]
     },
     "require-dev": {
         "phpstan/phpstan": "^1.10",

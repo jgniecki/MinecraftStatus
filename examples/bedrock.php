@@ -9,12 +9,12 @@
 use DevLancer\MinecraftStatus\Exception\ConnectionException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
-use DevLancer\MinecraftStatus\QueryBedrock;
+use DevLancer\MinecraftStatus\MinecraftBedrockStatus;
 
 require_once '../vendor/autoload.php';
 echo "MinecraftStatus\n<br>";
 
-$queryBedrock = new QueryBedrock("mc.server-bedrock.loc");
+$queryBedrock = new MinecraftBedrockStatus("mc.server-bedrock.loc");
 
 try {
     print_r($queryBedrock->getInfo()); //Don't do it that way,

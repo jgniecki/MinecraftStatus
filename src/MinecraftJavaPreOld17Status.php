@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 /**
- * @author Jakub Gniecki
- * @copyright Jakub Gniecki <kubuspl@onet.eu>
+ * @author Jakub Gniecki <kubuspl@onet.eu>
+ * @copyright
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
@@ -13,15 +13,11 @@ use DevLancer\MinecraftStatus\Exception\ConnectionException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
 
-/**
- * Class PingPreOld17
- * @package DevLancer\MinecraftStatus
- */
-class PingPreOld17 extends AbstractPing
+class MinecraftJavaPreOld17Status extends AbstractStatus implements ProtocolInterface
 {
     /**
      * @inheritDoc
-     * @return PingPreOld17
+     * @return MinecraftJavaPreOld17Status
      * @throws ConnectionException Thrown when failed to connect to resource
      * @throws ReceiveStatusException Thrown when the status has not been obtained or resolved
      */
@@ -29,6 +25,35 @@ class PingPreOld17 extends AbstractPing
     {
         parent::connect();
         return $this;
+    }
+
+    /**
+     * @return int
+     * @throws NotConnectedException
+     */
+    public function getCountPlayers(): int
+    {
+        return (int)($this->getInfo()['players']['online'] ?? 0);
+    }
+
+    /**
+     * @return int
+     * @throws NotConnectedException
+     */
+    public function getMaxPlayers(): int
+    {
+        return (int)($this->getInfo()['players']['max'] ?? 0);
+    }
+
+    /**
+     * Returns the server protocol number
+     *
+     * @return int
+     * @throws NotConnectedException
+     */
+    public function getProtocol(): int
+    {
+        return (int)($this->getInfo()['version']['protocol'] ?? 0);
     }
 
     /**
@@ -93,5 +118,23 @@ class PingPreOld17 extends AbstractPing
         ];
 
         $this->info = $this->encoding($result);
+    }
+}
+
+/**
+ * @deprecated Since version 3.1. Please use class DevLancer\MinecraftStatus\MinecraftJavaPreOld17Status instead.
+ */
+final class PingPreOld17 extends MinecraftJavaPreOld17Status
+{
+    /**
+     * @deprecated Since version 3.1. Please use class DevLancer\MinecraftStatus\MinecraftJavaPreOld17Status instead.
+     */
+    public function __construct(string $host, int $port = 25565, int $timeout = 3, bool $resolveSRV = true)
+    {
+        trigger_error(
+            sprintf('Class %s is deprecated and will be removed in future versions. Please use class %s instead.', __CLASS__, MinecraftJavaPreOld17Status::class),
+            E_USER_DEPRECATED
+        );
+        parent::__construct($host, $port, $timeout, $resolveSRV);
     }
 }
