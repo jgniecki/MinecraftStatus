@@ -9,12 +9,13 @@
 use DevLancer\MinecraftStatus\Exception\ConnectionException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
+use DevLancer\MinecraftStatus\MinecraftJavaQuery;
 use DevLancer\MinecraftStatus\Query;
 
 require_once '../vendor/autoload.php';
 echo "MinecraftStatus\n<br>";
 
-$query = new Query("mc.server-query.loc");
+$query = new MinecraftJavaQuery("mc.server-query.loc");
 
 try {
     print_r($query->getInfo()); //Don't do it that way,

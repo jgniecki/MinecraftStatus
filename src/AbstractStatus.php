@@ -10,6 +10,7 @@ namespace DevLancer\MinecraftStatus;
 
 use DevLancer\MinecraftStatus\Exception\ConnectionException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
+use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
 use InvalidArgumentException;
 
 abstract class AbstractStatus implements StatusInterface
@@ -73,6 +74,24 @@ abstract class AbstractStatus implements StatusInterface
 
         $this->setTimeout($timeout);
     }
+
+    /**
+     * @inheritDoc
+     * @throws ConnectionException Thrown when failed to connect to resource
+     * @throws ReceiveStatusException Thrown when the status has not been obtained or resolved
+     */
+    public function connect(): StatusInterface
+    {
+        if ($this->isConnected()) {
+            $this->disconnect();
+        }
+
+        $this->_connect($this->host, $this->port);
+        $this->getStatus();
+        return $this;
+    }
+
+    abstract protected function getStatus();
 
     /**
      *

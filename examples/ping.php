@@ -9,12 +9,12 @@
 use DevLancer\MinecraftStatus\Exception\ConnectionException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
-use DevLancer\MinecraftStatus\Ping;
+use DevLancer\MinecraftStatus\MinecraftJavaStatus;
 
 require_once '../vendor/autoload.php';
 echo "MinecraftStatus\n<br>";
 
-$ping = new Ping("mc.server-ping.loc");
+$ping = new MinecraftJavaStatus("mc.server-ping.loc");
 
 try {
     print_r($ping->getInfo()); //Don't do it that way,

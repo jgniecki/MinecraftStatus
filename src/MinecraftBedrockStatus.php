@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 /**
- * @author Jakub Gniecki
- * @copyright Jakub Gniecki <kubuspl@onet.eu>
+ * @author Jakub Gniecki <kubuspl@onet.eu>
+ * @copyright
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
@@ -14,11 +14,7 @@ use DevLancer\MinecraftStatus\Exception\NotConnectedException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
 use InvalidArgumentException;
 
-/**
- * Class QueryBedrock
- * @package DevLancer\MinecraftStatus
- */
-class QueryBedrock extends AbstractQuery implements ProtocolInterface
+class MinecraftBedrockStatus extends AbstractStatus implements ProtocolInterface
 {
     /**
      * QueryBedrock constructor.
@@ -33,22 +29,22 @@ class QueryBedrock extends AbstractQuery implements ProtocolInterface
 
     /**
      * @inheritDoc
-     * @return QueryBedrock
+     * @return MinecraftBedrockStatus
      * @throws ConnectionException Thrown when failed to connect to resource
      * @throws ReceiveStatusException Thrown when the status has not been obtained or resolved
      */
     public function connect(): StatusInterface
     {
-        parent::connect();
+        if ($this->isConnected()) {
+            $this->disconnect();
+        }
+
+        $this->_connect('udp://' . $this->host, $this->port);
+        stream_set_blocking($this->socket, true);
+        $this->getStatus();
         return $this;
     }
 
-    /**
-     * Returns the server protocol number
-     *
-     * @return int
-     * @throws NotConnectedException
-     */
     public function getProtocol(): int
     {
         return $this->getInfo()['protocol'];
@@ -126,5 +122,50 @@ class QueryBedrock extends AbstractQuery implements ProtocolInterface
         $info['hostname'] = implode(";", $info['hostname']);
 
         return $info;
+    }
+
+    /**
+     * @return int
+     * @throws NotConnectedException
+     */
+    public function getCountPlayers(): int
+    {
+        return (int)($this->getInfo()['numplayers'] ?? 0);
+    }
+
+    /**
+     * @return int
+     * @throws NotConnectedException
+     */
+    public function getMaxPlayers(): int
+    {
+        return (int)($this->getInfo()['maxplayers'] ?? 0);
+    }
+
+    /**
+     * @return string
+     * @throws NotConnectedException
+     */
+    public function getMotd(): string
+    {
+        return $this->getInfo()['hostname'] ?? "";
+    }
+}
+
+/**
+ * @deprecated Since version 3.1. Please use class DevLancer\MinecraftStatus\MinecraftBedrockStatus instead.
+ */
+final class QueryBedrock extends MinecraftBedrockStatus
+{
+    /**
+     * @deprecated Since version 3.1. Please use class DevLancer\MinecraftStatus\MinecraftBedrockStatus instead.
+     */
+    public function __construct(string $host, int $port = 19132, int $timeout = 3, bool $resolveSRV = true)
+    {
+        trigger_error(
+            sprintf('Class %s is deprecated and will be removed in future versions. Please use class %s instead.', __CLASS__, MinecraftBedrockStatus::class),
+            E_USER_DEPRECATED
+        );
+        parent::__construct($host, $port, $timeout, $resolveSRV);
     }
 }

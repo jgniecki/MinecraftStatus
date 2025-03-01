@@ -6,13 +6,14 @@
  * file that was distributed with this source code.
  */
 
+
 namespace DevLancer\MinecraftStatus;
 
 use DevLancer\MinecraftStatus\Exception\ConnectionException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
 
-class Ping extends AbstractPing implements PlayerListInterface, FaviconInterface, DelayInterface
+class MinecraftJavaStatus extends AbstractStatus implements PlayerListInterface, FaviconInterface, DelayInterface, ProtocolInterface
 {
     /**
      * @var string[]
@@ -23,7 +24,7 @@ class Ping extends AbstractPing implements PlayerListInterface, FaviconInterface
 
     /**
      * @inheritDoc
-     * @return Ping
+     * @return MinecraftJavaStatus
      * @throws ConnectionException Thrown when failed to connect to resource
      * @throws ReceiveStatusException Thrown when the status has not been obtained or resolved
      */
@@ -31,6 +32,35 @@ class Ping extends AbstractPing implements PlayerListInterface, FaviconInterface
     {
         parent::connect();
         return $this;
+    }
+
+    /**
+     * @return int
+     * @throws NotConnectedException
+     */
+    public function getCountPlayers(): int
+    {
+        return (int)($this->getInfo()['players']['online'] ?? 0);
+    }
+
+    /**
+     * @return int
+     * @throws NotConnectedException
+     */
+    public function getMaxPlayers(): int
+    {
+        return (int)($this->getInfo()['players']['max'] ?? 0);
+    }
+
+    /**
+     * Returns the server protocol number
+     *
+     * @return int
+     * @throws NotConnectedException
+     */
+    public function getProtocol(): int
+    {
+        return (int)($this->getInfo()['version']['protocol'] ?? 0);
     }
 
     public function getDelay(): int
@@ -148,5 +178,56 @@ class Ping extends AbstractPing implements PlayerListInterface, FaviconInterface
         }
 
         return $players;
+    }
+
+
+    /**
+     * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
+     *
+     * @return int
+     * @throws ReceiveStatusException
+     */
+    protected function readVarInt(): int
+    {
+        $i = 0;
+        $j = 0;
+
+        while (true) {
+            $k = @fgetc($this->socket);
+            if ($k === false) {
+                return 0;
+            }
+
+            $k = ord($k);
+            $i |= ($k & 0x7F) << $j++ * 7;
+
+            if ($j > 5) {
+                throw new ReceiveStatusException('VarInt too big');
+            }
+
+            if (($k & 0x80) != 128) {
+                break;
+            }
+        }
+
+        return $i;
+    }
+}
+
+/**
+ * @deprecated Since version 3.1. Please use class DevLancer\MinecraftStatus\MinecraftJavaStatus instead.
+ */
+final class Ping extends MinecraftJavaStatus
+{
+    /**
+     * @deprecated Since version 3.1. Please use class DevLancer\MinecraftStatus\MinecraftJavaStatus instead.
+     */
+    public function __construct(string $host, int $port = 25565, int $timeout = 3, bool $resolveSRV = true)
+    {
+        trigger_error(
+            sprintf('Class %s is deprecated and will be removed in future versions. Please use class %s instead.', __CLASS__, MinecraftJavaStatus::class),
+            E_USER_DEPRECATED
+        );
+        parent::__construct($host, $port, $timeout, $resolveSRV);
     }
 }

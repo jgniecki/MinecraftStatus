@@ -1,5 +1,6 @@
 # Minecraft Status
 ![](https://img.shields.io/packagist/l/dev-lancer/minecraft-status?style=for-the-badge)
+![](https://img.shields.io/packagist/dt/dev-lancer/minecraft-status?style=for-the-badge)
 ![](https://img.shields.io/github/v/release/DeveloperLancer/MinecraftStatus?style=for-the-badge)
 ![](https://img.shields.io/packagist/php-v/dev-lancer/minecraft-status?style=for-the-badge)
 
@@ -11,26 +12,29 @@ This library can be installed by issuing the following command:
 composer require dev-lancer/minecraft-status
 ```
 
-## Differences between Ping and Query
+## Differences between MinecraftJavaStatus and MinecraftJavaQuery
 
-### Ping
-Ping uses the TCP protocol to communicate with the Minecraft server in the java edition and bedrock edition, it uses the port on which the server is running.
+### MinecraftJavaStatus
+MinecraftJavaStatus uses the TCP protocol to communicate with the Minecraft server in the java edition and bedrock edition, it uses the port on which the server is running.
 Ping provides the most necessary information (hostname, motd, favicon, and a sample of players).
 Thanks to its simplicity, it does not require any configuration on the server side, communication works with servers from version 1.7 and above.
 
-To communicate with a server which has a version lower than 1.7, use the `PingPreOld17` class
+To communicate with a server which has a version lower than 1.7, use the `MinecraftJavaPreOld17Status` class
 
-### Query
-Query uses GameSpy 4 protocol for communication,
+For bedrock edition servers use class `MinecraftBedrockStatus`
+
+
+### MinecraftJavaQuery
+MinecraftJavaQuery uses GameSpy 4 protocol for communication,
 so you should start listening in the server properties.
 Query allows you to request more information about the server,
 but has more security vulnerabilities.
 
 ## Usage
 
-### Query
+### Minecraft Java Edition server with Query
 
-Example: [Query](examples/query.php)
+Example: [MinecraftJavaQuery](examples/query.php)
 
 This method uses GameSpy4 protocol, and requires enabling `query` listener in your `server.properties` like this:
 
@@ -39,7 +43,7 @@ This method uses GameSpy4 protocol, and requires enabling `query` listener in yo
 
 ```php
 <?php
-use \DevLancer\MinecraftStatus\Query;
+use \DevLancer\MinecraftStatus\MinecraftJavaQuery;
 
 require_once ("vendor/autoload.php");
 
@@ -48,14 +52,14 @@ $port = 25565; //from query.port
 $timeout = 3;
 $resolveSVR = true;
 
-$query = new Query($host, $port, $timeout, $resolveSVR);
+$query = new MinecraftJavaQuery($host, $port, $timeout, $resolveSVR);
 $query->connect();
 print_r($query->getInfo());
 ```
 
-### QueryBedrock
+### Minecraft Bedrock Edition server status
 
-Example: [Bedrock](examples/bedrock.php)
+Example: [MinecraftBedrockStatus](examples/bedrock.php)
 
 Use this class for bedrock edition servers
 
@@ -64,7 +68,7 @@ the port on which the server runs is used to communicate with the server
 
 ```php
 <?php
-use \DevLancer\MinecraftStatus\QueryBedrock;
+use \DevLancer\MinecraftStatus\MinecraftBedrockStatus;
 
 require_once ("vendor/autoload.php");
 
@@ -73,19 +77,19 @@ $port = 19132;
 $timeout = 3;
 $resolveSVR = true;
 
-$query = new QueryBedrock($host, $port, $timeout, $resolveSVR);
+$query = new MinecraftBedrockStatus($host, $port, $timeout, $resolveSVR);
 $query->connect();
 print_r($query->getInfo());
 ```
 
-### Ping and PingPreOld17
+### Minecraft Java Edition server status
 
-Example: [Ping](examples/ping.php)
+Example: [MinecraftJavaStatus](examples/ping.php)
 
 ```php
 <?php
-use \DevLancer\MinecraftStatus\Ping;
-use \DevLancer\MinecraftStatus\PingPreOld17;
+use \DevLancer\MinecraftStatus\MinecraftJavaStatus;
+use \DevLancer\MinecraftStatus\MinecraftJavaPreOld17Status;
 
 require_once ("vendor/autoload.php");
 
@@ -94,8 +98,8 @@ $port = 25565;
 $timeout = 3;
 $resolveSVR = true;
 
-$ping = new Ping($host, $port, $timeout, $resolveSVR);
-//$ping = new PingPreOld17($host, $port, $timeout, $resolveSVR); //use when version is older than Minecraft 1.7
+$ping = new MinecraftJavaStatus($host, $port, $timeout, $resolveSVR);
+//$ping = new MinecraftJavaPreOld17Status($host, $port, $timeout, $resolveSVR); //use when version is older than Minecraft 1.7
 $ping->connect();
 print_r($ping->getInfo());
 ```
@@ -105,26 +109,26 @@ If you want to get `ping` info from a server that uses a version older than Mine
 ## Methods
 
 ### List of methods
-|                   | Query | QueryBedrock | Ping | PingPreOld17 |
-|-------------------|-------|--------------|------|--------------|
-| connect()         | X     |       X      |   X  |       X      |
-| isConnected()     | X     |       X      |   X  |       X      |
-| disconnect()      | X     |       X      |   X  |       X      |
-| getPlayers()      | X     |              |   X  |              |
-| getCountPlayers() | X     |       X      |   X  |       X      |
-| getMaxPlayers()   | X     |       X      |   X  |       X      |
-| getInfo()         | X     |       X      |   X  |       X      |
-| getFavicon()      |       |              |   X  |              |
-| getDelay()        |       |              |   X  |              |
-| setTimeout()      | X     |       X      |   X  |       X      |
-| getTimeout()      | X     |       X      |   X  |       X      |
-| setEncoding()     | X     |       X      |   X  |       X      |
-| getEncoding()     | X     |       X      |   X  |       X      |
-| isResolveSRV()    | X     |       X      |   X  |       X      |
-| getHost()         | X     |       X      |   X  |       X      |
-| getPort()         | X     |       X      |   X  |       X      |
-| getMotd()         | X     |       X      |   X  |       X      |
-| getProtocol()     |       |       X      |   X  |       X      | 
+|                   | MinecraftJavaQuery | MinecraftBedrockStatus | MinecraftJavaStatus | MinecraftJavaPreOld17Status |
+|-------------------|--------------------|------------------------|---------------------|-----------------------------|
+| connect()         | X                  | X                      | X                   | X                           |
+| isConnected()     | X                  | X                      | X                   | X                           |
+| disconnect()      | X                  | X                      | X                   | X                           |
+| getPlayers()      | X                  |                        | X                   |                             |
+| getCountPlayers() | X                  | X                      | X                   | X                           |
+| getMaxPlayers()   | X                  | X                      | X                   | X                           |
+| getInfo()         | X                  | X                      | X                   | X                           |
+| getFavicon()      |                    |                        | X                   |                             |
+| getDelay()        |                    |                        | X                   |                             |
+| setTimeout()      | X                  | X                      | X                   | X                           |
+| getTimeout()      | X                  | X                      | X                   | X                           |
+| setEncoding()     | X                  | X                      | X                   | X                           |
+| getEncoding()     | X                  | X                      | X                   | X                           |
+| isResolveSRV()    | X                  | X                      | X                   | X                           |
+| getHost()         | X                  | X                      | X                   | X                           |
+| getPort()         | X                  | X                      | X                   | X                           |
+| getMotd()         | X                  | X                      | X                   | X                           |
+| getProtocol()     |                    | X                      | X                   | X                           | 
 
 ### Use before connecting
 
