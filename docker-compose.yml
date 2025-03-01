@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+    minecraft-status:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: minecraft_status
+        volumes:
+            - .:/var/www/html
+        ports:
+            - "80:80"
