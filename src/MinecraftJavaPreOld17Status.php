@@ -10,7 +10,9 @@
 namespace DevLancer\MinecraftStatus;
 
 use DevLancer\MinecraftStatus\Exception\ConnectionException;
+use DevLancer\MinecraftStatus\Exception\InvalidResponseException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
+use DevLancer\MinecraftStatus\Exception\ProtocolException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
 
 class MinecraftJavaPreOld17Status extends AbstractStatus implements ProtocolInterface
@@ -75,22 +77,14 @@ class MinecraftJavaPreOld17Status extends AbstractStatus implements ProtocolInte
     {
         fwrite($this->socket, "\xFE\x01");
         $data = fread($this->socket, 512);
-        if (empty($data)) {
-            throw new ReceiveStatusException('Failed to receive status.');
-        }
-
-        $length = strlen($data);
-        if ($length < 4 || $data[0] !== "\xFF") {
-            throw new ReceiveStatusException('Failed to receive status.');
-        }
-
-
-        $data = substr($data, 3); // Strip packet header (kick message packet and short length)
-        $data = iconv('UTF-16BE', 'UTF-8', $data);
-
         if ($data === false) {
             throw new ReceiveStatusException('Failed to receive status.');
         }
+
+        $this->validateLegacyPacket($data);
+
+        $data = substr($data, 3); // Strip packet header (kick message packet and short length)
+        $data = $this->decodeLegacyPayload($data);
 
         // Are we dealing with Minecraft 1.4+ server?
         if ($data[1] === "\xA7" && $data[2] === "\x31") {
@@ -118,6 +112,30 @@ class MinecraftJavaPreOld17Status extends AbstractStatus implements ProtocolInte
         ];
 
         $this->info = $this->encoding($result);
+    }
+
+    /**
+     * @throws ProtocolException
+     */
+    protected function validateLegacyPacket(string $data): void
+    {
+        if ($data === '' || strlen($data) < 4 || $data[0] !== "\xFF") {
+            throw new ProtocolException('Failed to receive status.');
+        }
+    }
+
+    /**
+     * @throws InvalidResponseException
+     */
+    protected function decodeLegacyPayload(string $data): string
+    {
+        $decoded = @iconv('UTF-16BE', 'UTF-8', $data);
+
+        if ($decoded === false) {
+            throw new InvalidResponseException('Failed to receive status.');
+        }
+
+        return $decoded;
     }
 }
 

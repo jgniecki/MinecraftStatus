@@ -11,6 +11,7 @@ namespace DevLancer\MinecraftStatus;
 
 use DevLancer\MinecraftStatus\Exception\ConnectionException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
+use DevLancer\MinecraftStatus\Exception\ProtocolException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
 use InvalidArgumentException;
 
@@ -76,16 +77,24 @@ class MinecraftBedrockStatus extends AbstractStatus implements ProtocolInterface
             throw new ReceiveStatusException("Failed to read from socket.");
         }
 
-        if ($data[0] !== "\x1C") {
-            throw new ReceiveStatusException("First byte is not ID_UNCONNECTED_PONG.");
-        }
-
-        if (substr($data, 17, 16) !== $OFFLINE_MESSAGE_DATA_ID) {
-            throw new ReceiveStatusException("Magic bytes do not match.");
-        }
+        $this->validatePong($data, $OFFLINE_MESSAGE_DATA_ID);
 
         $info = $this->resolveStatus($data);
         $this->info = $this->encoding($info);
+    }
+
+    /**
+     * @throws ProtocolException
+     */
+    protected function validatePong(string $data, string $offlineMessageDataId): void
+    {
+        if ($data === '' || $data[0] !== "\x1C") {
+            throw new ProtocolException("First byte is not ID_UNCONNECTED_PONG.");
+        }
+
+        if (substr($data, 17, 16) !== $offlineMessageDataId) {
+            throw new ProtocolException("Magic bytes do not match.");
+        }
     }
 
     /**

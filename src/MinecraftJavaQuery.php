@@ -10,7 +10,9 @@
 namespace DevLancer\MinecraftStatus;
 
 use DevLancer\MinecraftStatus\Exception\ConnectionException;
+use DevLancer\MinecraftStatus\Exception\InvalidResponseException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
+use DevLancer\MinecraftStatus\Exception\ProtocolException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
 
 class MinecraftJavaQuery extends AbstractStatus implements MinecraftJavaQueryInterface
@@ -69,14 +71,14 @@ class MinecraftJavaQuery extends AbstractStatus implements MinecraftJavaQueryInt
         $data = $this->writeData(0x00, $append);
 
         if (!$data) {
-            throw new ReceiveStatusException('Failed to receive status.');
+            throw new ProtocolException('Failed to receive status.');
         }
 
         $data = substr($data, 11);
         $data = explode("\x00\x00\x01player_\x00\x00", $data);
 
         if (count($data) !== 2) {
-            throw new ReceiveStatusException('Failed to parse server\'s response.');
+            throw new InvalidResponseException('Failed to parse server\'s response.');
         }
 
         if (is_string($data[1])) {
@@ -142,7 +144,7 @@ class MinecraftJavaQuery extends AbstractStatus implements MinecraftJavaQueryInt
         $data = $this->writeData(0x09);
 
         if (!$data) {
-            throw new ReceiveStatusException('Failed to receive challenge.');
+            throw new ProtocolException('Failed to receive challenge.');
         }
 
         return pack('N', $data);

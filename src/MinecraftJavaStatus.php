@@ -10,8 +10,11 @@
 namespace DevLancer\MinecraftStatus;
 
 use DevLancer\MinecraftStatus\Exception\ConnectionException;
+use DevLancer\MinecraftStatus\Exception\InvalidResponseException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
+use DevLancer\MinecraftStatus\Exception\ProtocolException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
+use DevLancer\MinecraftStatus\Exception\TimeoutException;
 
 class MinecraftJavaStatus extends AbstractStatus implements PlayerListInterface, FaviconInterface, DelayInterface, ProtocolInterface
 {
@@ -123,20 +126,20 @@ class MinecraftJavaStatus extends AbstractStatus implements PlayerListInterface,
 
         $length = $this->readVarInt(); // full packet length
         if ($length < 10) {
-            throw new ReceiveStatusException('Failed to receive status.');
+            throw new ProtocolException('Failed to receive status.');
         }
 
         $this->readVarInt(); // packet type, in server ping it's 0
         $length = $this->readVarInt(); // string length
         if ($length < 2) {
-            throw new ReceiveStatusException('Failed to receive status.');
+            throw new ProtocolException('Failed to receive status.');
         }
 
         $data = "";
 
         do {
             if (microtime(true) - $timestart > $this->timeout) {
-                throw new ReceiveStatusException('Server read timed out');
+                throw new TimeoutException('Server read timed out');
             }
 
             $remainder = $length - strlen($data);
@@ -150,18 +153,18 @@ class MinecraftJavaStatus extends AbstractStatus implements PlayerListInterface,
             }
 
             if (!$block) {
-                throw new ReceiveStatusException('Server returned too few data');
+                throw new ProtocolException('Server returned too few data');
             }
 
             $data .= $block;
         } while (strlen($data) < $length);
         $result = json_decode($data, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new ReceiveStatusException('JSON parsing failed: ' . json_last_error_msg());
+            throw new InvalidResponseException('JSON parsing failed: ' . json_last_error_msg());
         }
 
         if (!is_array($result)) {
-            throw new ReceiveStatusException('The server did not return the information');
+            throw new InvalidResponseException('The server did not return the information');
         }
 
         $result = $this->encoding($result);
@@ -207,7 +210,7 @@ class MinecraftJavaStatus extends AbstractStatus implements PlayerListInterface,
             $i |= ($k & 0x7F) << $j++ * 7;
 
             if ($j > 5) {
-                throw new ReceiveStatusException('VarInt too big');
+                throw new ProtocolException('VarInt too big');
             }
 
             if (($k & 0x80) != 128) {
