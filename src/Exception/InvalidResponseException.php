@@ -8,7 +8,7 @@
 
 namespace DevLancer\MinecraftStatus\Exception;
 
-class NotConnectedException extends StatusNotResolvedException
+class InvalidResponseException extends ReceiveStatusException
 {
 
 }
