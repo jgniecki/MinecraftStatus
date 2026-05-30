@@ -8,6 +8,7 @@
 
 namespace DevLancer\MinecraftStatus;
 
+use DevLancer\MinecraftStatus\Dns\SrvResolver;
 use DevLancer\MinecraftStatus\Exception\ConnectionException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
@@ -16,8 +17,6 @@ use Throwable;
 
 abstract class AbstractStatus implements StatusInterface
 {
-    use ResolveSRVTrait;
-
     /**
      * @var resource|null
      */
@@ -64,9 +63,9 @@ abstract class AbstractStatus implements StatusInterface
         $this->resolveSRV = $resolveSRV;
 
         if ($this->resolveSRV) {
-            $resolve = $this->resolveSRV($host);
-            $host = ($resolve['host'] != null) ? $resolve['host'] : $host;
-            $port = ($resolve['port'] != null) ? (int)$resolve['port'] : $port;
+            $resolve = $this->createSrvResolver()->resolve($host, $port);
+            $host = $resolve['host'];
+            $port = $resolve['port'];
         }
 
         $this->host = $host;
@@ -126,6 +125,11 @@ abstract class AbstractStatus implements StatusInterface
     }
 
     abstract protected function getStatus();
+
+    protected function createSrvResolver(): SrvResolver
+    {
+        return new SrvResolver();
+    }
 
     protected function resetState(): void
     {
