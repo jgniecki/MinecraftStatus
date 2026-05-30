@@ -73,15 +73,12 @@ class MinecraftJavaPreOld17Status extends AbstractStatus implements ProtocolInte
     }
 
     /**
-     * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
-     *
-     *
      * @throws ReceiveStatusException
      */
     protected function getStatus(): void
     {
-        fwrite($this->socket, "\xFE\x01");
-        $data = fread($this->socket, 512);
+        fwrite($this->socket(), "\xFE\x01");
+        $data = fread($this->socket(), 512);
         if ($data === false) {
             throw new ReceiveStatusException('Failed to receive status.');
         }
@@ -128,4 +125,3 @@ final class PingPreOld17 extends MinecraftJavaPreOld17Status
         parent::__construct($host, $port, $timeout, $resolveSRV);
     }
 }
-

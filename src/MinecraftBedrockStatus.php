@@ -39,7 +39,7 @@ class MinecraftBedrockStatus extends AbstractStatus implements ProtocolInterface
     {
         return $this->fetchWithConnection(function (): void {
             $this->_connect('udp://' . $this->host, $this->port);
-            stream_set_blocking($this->socket, true);
+            stream_set_blocking($this->socket(), true);
         });
     }
 
@@ -66,8 +66,6 @@ class MinecraftBedrockStatus extends AbstractStatus implements ProtocolInterface
     }
 
     /**
-     * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
-     *
      * @throws ReceiveStatusException
      */
     protected function getStatus(): void
@@ -79,11 +77,11 @@ class MinecraftBedrockStatus extends AbstractStatus implements ProtocolInterface
         $command .= pack('Q', 2);
         $length = strlen($command);
 
-        if ($length !== fwrite($this->socket, $command, $length)) {
+        if ($length !== fwrite($this->socket(), $command, $length)) {
             throw new ReceiveStatusException("Failed to write on socket.");
         }
 
-        $data = fread($this->socket, 4096);
+        $data = fread($this->socket(), 4096);
 
         if ($data === false) {
             throw new ReceiveStatusException("Failed to read from socket.");
@@ -160,4 +158,3 @@ final class QueryBedrock extends MinecraftBedrockStatus
         parent::__construct($host, $port, $timeout, $resolveSRV);
     }
 }
-

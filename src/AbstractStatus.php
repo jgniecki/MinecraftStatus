@@ -129,7 +129,7 @@ abstract class AbstractStatus implements StatusInterface
         return $this;
     }
 
-    abstract protected function getStatus();
+    abstract protected function getStatus(): void;
 
     protected function createSrvResolver(): SrvResolver
     {
@@ -162,8 +162,9 @@ abstract class AbstractStatus implements StatusInterface
 
     public function disconnect(): void
     {
-        if ($this->isConnected()) {
-            if (fclose($this->socket)) {
+        $socket = $this->socket;
+        if (is_resource($socket)) {
+            if (fclose($socket)) {
                 $this->socket = null;
             }
         }
@@ -294,12 +295,25 @@ abstract class AbstractStatus implements StatusInterface
         $seconds = (int)floor($this->timeout);
         $microseconds = (int)round(($this->timeout - $seconds) * 1_000_000);
 
-        stream_set_timeout($this->socket, $seconds, $microseconds);
+        stream_set_timeout($this->socket(), $seconds, $microseconds);
     }
 
     /**
-     * @param array $data
-     * @return array
+     * @return resource
+     * @throws ReceiveStatusException
+     */
+    protected function socket()
+    {
+        if (!is_resource($this->socket)) {
+            throw new ReceiveStatusException('Socket is not open.');
+        }
+
+        return $this->socket;
+    }
+
+    /**
+     * @param array<mixed> $data
+     * @return array<mixed>
      */
     protected function encoding(array $data): array
     {

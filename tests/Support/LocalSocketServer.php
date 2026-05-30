@@ -9,6 +9,7 @@ final class LocalSocketServer
     /**
      * @param resource $process
      * @param array<int, resource> $pipes
+     * @param list<string> $requests
      */
     private function __construct(
         private readonly mixed $process,
@@ -79,7 +80,7 @@ final class LocalSocketServer
             }
 
             $status = proc_get_status($this->process);
-            if (($status['running'] ?? false) !== true && count($this->requests) >= $expectedCount) {
+            if ($status['running'] !== true && count($this->requests) >= $expectedCount) {
                 break;
             }
 
@@ -98,7 +99,7 @@ final class LocalSocketServer
         $this->collectOutput();
 
         $status = proc_get_status($this->process);
-        if (($status['running'] ?? false) === true) {
+        if ($status['running'] === true) {
             proc_terminate($this->process);
         }
 
@@ -195,7 +196,7 @@ final class LocalSocketServer
             }
 
             $status = proc_get_status($process);
-            if (($status['running'] ?? false) !== true && $line === '') {
+            if ($status['running'] !== true && $line === '') {
                 break;
             }
 

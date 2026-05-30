@@ -127,7 +127,7 @@ class MinecraftJavaStatus extends AbstractStatus implements PlayerListInterface,
         $data .= "\x01"; // Next state: status (varint)
         $data = $this->writeVarInt(strlen($data)) . $data; // prepend length of packet ID + data
         $timestart = microtime(true); // for read timeout purposes
-        fwrite($this->socket, $data . "\x01\x00"); // handshake
+        fwrite($this->socket(), $data . "\x01\x00"); // handshake
 
         $length = $this->readVarInt(); // full packet length
         if ($length < 10) {
@@ -156,7 +156,7 @@ class MinecraftJavaStatus extends AbstractStatus implements PlayerListInterface,
                 break;
             }
 
-            $block = fread($this->socket, $remainder);
+            $block = fread($this->socket(), $remainder);
             if ($this->delay == 0) {
                 $this->delay = (int)floor((microtime(true) - $timestart) * 1000);
             }
@@ -173,8 +173,8 @@ class MinecraftJavaStatus extends AbstractStatus implements PlayerListInterface,
     }
 
     /**
-     * @param array $data <string, mixed>
-     * @return array
+     * @param array<string, mixed> $data
+     * @return array<mixed>
      */
     protected function resolvePlayerList(array $data): array
     {
@@ -197,7 +197,7 @@ class MinecraftJavaStatus extends AbstractStatus implements PlayerListInterface,
         $j = 0;
 
         while (true) {
-            $k = @fgetc($this->socket);
+            $k = @fgetc($this->socket());
             if ($k === false) {
                 return 0;
             }
@@ -253,4 +253,3 @@ final class Ping extends MinecraftJavaStatus
         parent::__construct($host, $port, $timeout, $resolveSRV);
     }
 }
-

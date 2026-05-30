@@ -34,7 +34,7 @@ class MinecraftJavaQuery extends AbstractStatus implements MinecraftJavaQueryInt
     {
         return $this->fetchWithConnection(function (): void {
             $this->_connect('udp://' . $this->host, $this->port);
-            stream_set_blocking($this->socket, true);
+            stream_set_blocking($this->socket(), true);
         });
     }
 
@@ -88,7 +88,7 @@ class MinecraftJavaQuery extends AbstractStatus implements MinecraftJavaQueryInt
 
     /**
      * @param string $data
-     * @return array
+     * @return array<mixed>
      */
     protected function resolvePlayerList(string $data): array
     {
@@ -158,11 +158,11 @@ class MinecraftJavaQuery extends AbstractStatus implements MinecraftJavaQueryInt
         $packet = pack('c*', 0xFE, 0xFD, $command) . self::SESSION_ID . $append;
         $length = strlen($packet);
 
-        if ($length !== fwrite($this->socket, $packet, $length)) {
+        if ($length !== fwrite($this->socket(), $packet, $length)) {
             throw new ReceiveStatusException("Failed to write on socket.");
         }
 
-        $data = fread($this->socket, 4096);
+        $data = fread($this->socket(), 4096);
 
         if ($data === false) {
             throw new ReceiveStatusException("Failed to read from socket.");
@@ -193,4 +193,3 @@ final class Query extends MinecraftJavaQuery
         parent::__construct($host, $port, $timeout, $resolveSRV);
     }
 }
-

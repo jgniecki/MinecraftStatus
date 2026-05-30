@@ -7,7 +7,7 @@ use DevLancer\MinecraftStatus\Exception\InvalidResponseException;
 final class JavaStatusParser
 {
     /**
-     * @return array{info: array<string, mixed>, players: array}
+     * @return array{info: array<string, mixed>, players: array<mixed>}
      * @throws InvalidResponseException
      */
     public function parse(string $payload): array
@@ -29,7 +29,7 @@ final class JavaStatusParser
 
     /**
      * @param array<string, mixed> $data
-     * @return array
+     * @return array<mixed>
      */
     public function resolvePlayerList(array $data): array
     {
