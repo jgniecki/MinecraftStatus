@@ -15,6 +15,7 @@ final class LegacyJavaStatusParser
     public function parse(string $payload): array
     {
         $this->validateLegacyPacket($payload);
+        $this->validatePayloadLength($payload);
 
         $payload = substr($payload, 3);
         $payload = $this->decodeLegacyPayload($payload);
@@ -44,6 +45,17 @@ final class LegacyJavaStatusParser
         }
 
         return $decoded;
+    }
+
+    /**
+     * @throws InvalidResponseException
+     */
+    private function validatePayloadLength(string $data): void
+    {
+        $length = unpack('n', substr($data, 1, 2));
+        if (!is_array($length) || strlen(substr($data, 3)) !== ((int)$length[1] * 2)) {
+            throw new InvalidResponseException('Failed to receive status.');
+        }
     }
 
     /**

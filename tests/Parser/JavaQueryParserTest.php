@@ -43,7 +43,17 @@ final class JavaQueryParserTest extends TestCase
         $this->expectException(InvalidResponseException::class);
         $this->expectExceptionMessage('Failed to parse server\'s response.');
 
-        $parser->parse(str_repeat("\x00", 11) . "hostname\x00Query Server");
+        $parser->parse("splitnum\x00\x80\x00hostname\x00Query Server");
+    }
+
+    public function testInvalidSplitnumPrefixThrowsInvalidResponseException(): void
+    {
+        $parser = new JavaQueryParser();
+
+        $this->expectException(InvalidResponseException::class);
+        $this->expectExceptionMessage('Failed to parse server\'s response.');
+
+        $parser->parse(str_repeat("\x00", 11) . "hostname\x00Query Server\x00\x00\x01player_\x00\x00\x00\x00");
     }
 
     public function testInvalidKeyValueStructureThrowsInvalidResponseException(): void
@@ -61,6 +71,6 @@ final class JavaQueryParserTest extends TestCase
 
     private function queryPayload(string $info, string $players): string
     {
-        return str_repeat("\x00", 11) . $info . "\x00\x00\x01player_\x00\x00" . $players;
+        return "splitnum\x00\x80\x00" . $info . "\x00\x00\x01player_\x00\x00" . $players;
     }
 }

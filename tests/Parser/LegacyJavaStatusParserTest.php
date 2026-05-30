@@ -73,12 +73,22 @@ final class LegacyJavaStatusParserTest extends TestCase
         $parser->parse("\xFF\x00\x00\x00");
     }
 
+    public function testDeclaredPayloadLengthMismatchThrowsInvalidResponseException(): void
+    {
+        $parser = new LegacyJavaStatusParser();
+
+        $this->expectException(InvalidResponseException::class);
+        $this->expectExceptionMessage('Failed to receive status.');
+
+        $parser->parse("\xFF\x00\x02\x00\x41");
+    }
+
     private function legacyPacket(string $decodedPayload): string
     {
         $payload = iconv('UTF-8', 'UTF-16BE', $decodedPayload);
 
         self::assertIsString($payload);
 
-        return "\xFF\x00\x00" . $payload;
+        return "\xFF" . pack('n', (int)(strlen($payload) / 2)) . $payload;
     }
 }

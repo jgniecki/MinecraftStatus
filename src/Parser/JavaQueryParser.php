@@ -7,6 +7,7 @@ use DevLancer\MinecraftStatus\Exception\InvalidResponseException;
 final class JavaQueryParser
 {
     private const PLAYER_SECTION_SEPARATOR = "\x00\x00\x01player_\x00\x00";
+    private const SPLITNUM_PREFIX = "splitnum\x00\x80\x00";
 
     /**
      * @return array{info: array<string, string>, players: string[]}
@@ -14,6 +15,10 @@ final class JavaQueryParser
      */
     public function parse(string $payload): array
     {
+        if (substr($payload, 0, 11) !== self::SPLITNUM_PREFIX) {
+            throw new InvalidResponseException('Failed to parse server\'s response.');
+        }
+
         $data = substr($payload, 11);
         $sections = explode(self::PLAYER_SECTION_SEPARATOR, $data);
 

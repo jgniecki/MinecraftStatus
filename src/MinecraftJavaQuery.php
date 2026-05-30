@@ -18,6 +18,8 @@ use DevLancer\MinecraftStatus\Result\JavaQueryResult;
 
 class MinecraftJavaQuery extends AbstractStatus implements MinecraftJavaQueryInterface
 {
+    private const SESSION_ID = "\x01\x02\x03\x04";
+
     /**
      * @var string[]
      */
@@ -67,8 +69,6 @@ class MinecraftJavaQuery extends AbstractStatus implements MinecraftJavaQueryInt
     }
 
     /**
-     * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
-     *
      * @throws ReceiveStatusException
      */
     protected function getStatus(): void
@@ -128,8 +128,6 @@ class MinecraftJavaQuery extends AbstractStatus implements MinecraftJavaQueryInt
     }
 
     /**
-     * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
-     *
      * @return string
      * @throws ReceiveStatusException
      */
@@ -141,12 +139,15 @@ class MinecraftJavaQuery extends AbstractStatus implements MinecraftJavaQueryInt
             throw new ProtocolException('Failed to receive challenge.');
         }
 
-        return pack('N', $data);
+        $challenge = rtrim($data, "\x00");
+        if (!is_numeric($challenge)) {
+            throw new ProtocolException('Failed to receive challenge.');
+        }
+
+        return pack('N', (int)$challenge);
     }
 
     /**
-     * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
-     *
      * @param int $command
      * @param string $append
      * @return string|null
@@ -154,10 +155,10 @@ class MinecraftJavaQuery extends AbstractStatus implements MinecraftJavaQueryInt
      */
     protected function writeData(int $command, string $append = ""): ?string
     {
-        $command = pack('c*', 0xFE, 0xFD, $command, 0x01, 0x02, 0x03, 0x04) . $append;
-        $length = strlen($command);
+        $packet = pack('c*', 0xFE, 0xFD, $command) . self::SESSION_ID . $append;
+        $length = strlen($packet);
 
-        if ($length !== fwrite($this->socket, $command, $length)) {
+        if ($length !== fwrite($this->socket, $packet, $length)) {
             throw new ReceiveStatusException("Failed to write on socket.");
         }
 
@@ -167,7 +168,7 @@ class MinecraftJavaQuery extends AbstractStatus implements MinecraftJavaQueryInt
             throw new ReceiveStatusException("Failed to read from socket.");
         }
 
-        if (strlen($data) < 5 || $data[0] != $command[2]) {
+        if (strlen($data) < 5 || ord($data[0]) !== $command || substr($data, 1, 4) !== self::SESSION_ID) {
             return null;
         }
 

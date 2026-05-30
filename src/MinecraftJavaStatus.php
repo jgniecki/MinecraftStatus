@@ -116,18 +116,16 @@ class MinecraftJavaStatus extends AbstractStatus implements PlayerListInterface,
     }
 
     /**
-     * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
-     *
      * @throws ReceiveStatusException*
      */
     protected function getStatus(): void
     {
         $data = "\x00"; // packet ID = 0 (varint)
         $data .= "\xff\xff\xff\xff\x0f"; //Protocol version (varint)
-        $data .= pack('c', strlen($this->host)) . $this->host; // Server (varint len + UTF-8 addr)
+        $data .= $this->writeVarInt(strlen($this->host)) . $this->host; // Server (varint len + UTF-8 addr)
         $data .= pack('n', $this->port); // Server port (unsigned short)
         $data .= "\x01"; // Next state: status (varint)
-        $data = pack('c', strlen($data)) . $data; // prepend length of packet ID + data
+        $data = $this->writeVarInt(strlen($data)) . $data; // prepend length of packet ID + data
         $timestart = microtime(true); // for read timeout purposes
         fwrite($this->socket, $data . "\x01\x00"); // handshake
 
@@ -136,7 +134,11 @@ class MinecraftJavaStatus extends AbstractStatus implements PlayerListInterface,
             throw new ProtocolException('Failed to receive status.');
         }
 
-        $this->readVarInt(); // packet type, in server ping it's 0
+        $packetId = $this->readVarInt(); // packet type, in server ping it's 0
+        if ($packetId !== 0) {
+            throw new ProtocolException('Failed to receive status.');
+        }
+
         $length = $this->readVarInt(); // string length
         if ($length < 2) {
             throw new ProtocolException('Failed to receive status.');
@@ -186,8 +188,6 @@ class MinecraftJavaStatus extends AbstractStatus implements PlayerListInterface,
 
 
     /**
-     * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
-     *
      * @return int
      * @throws ReceiveStatusException
      */
@@ -215,6 +215,24 @@ class MinecraftJavaStatus extends AbstractStatus implements PlayerListInterface,
         }
 
         return $i;
+    }
+
+    private function writeVarInt(int $value): string
+    {
+        $data = '';
+
+        do {
+            $byte = $value & 0x7F;
+            $value >>= 7;
+
+            if ($value !== 0) {
+                $byte |= 0x80;
+            }
+
+            $data .= chr($byte);
+        } while ($value !== 0);
+
+        return $data;
     }
 }
 
