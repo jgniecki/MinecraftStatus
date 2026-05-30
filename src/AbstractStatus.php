@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 /**
- * @author Jakub Gniecki <kubuspl@onet.eu>
+ * @author Jakub Gniecki <jgniecki.contact@gmail.com>
  * @copyright
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -8,15 +8,17 @@
 
 namespace DevLancer\MinecraftStatus;
 
+use DevLancer\MinecraftStatus\Dns\SrvResolver;
 use DevLancer\MinecraftStatus\Exception\ConnectionException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
+use DevLancer\MinecraftStatus\Result\GenericStatusResult;
+use DevLancer\MinecraftStatus\Result\StatusResultInterface;
 use InvalidArgumentException;
+use Throwable;
 
 abstract class AbstractStatus implements StatusInterface
 {
-    use ResolveSRVTrait;
-
     /**
      * @var resource|null
      */
@@ -32,10 +34,7 @@ abstract class AbstractStatus implements StatusInterface
      */
     protected int $port;
 
-    /**
-     * @var int
-     */
-    protected int $timeout;
+    protected float $timeout;
 
     /**
      * @var bool
@@ -47,6 +46,10 @@ abstract class AbstractStatus implements StatusInterface
      */
     protected array $info = [];
 
+    protected ?StatusResultInterface $result = null;
+
+    protected StatusState $statusState = StatusState::Idle;
+
     /**
      * @var string
      */
@@ -55,18 +58,18 @@ abstract class AbstractStatus implements StatusInterface
     /**
      * @param string $host
      * @param int $port
-     * @param int $timeout
+     * @param int|float $timeout
      * @param bool $resolveSRV
-     * @throws InvalidArgumentException The $timeout must be a positive integer
+     * @throws InvalidArgumentException The $timeout must be greater than zero
      */
-    public function __construct(string $host, int $port = 25565, int $timeout = 3, bool $resolveSRV = true)
+    public function __construct(string $host, int $port = 25565, int|float $timeout = 3, bool $resolveSRV = true)
     {
         $this->resolveSRV = $resolveSRV;
 
         if ($this->resolveSRV) {
-            $resolve = $this->resolveSRV($host);
-            $host = ($resolve['host'] != null) ? $resolve['host'] : $host;
-            $port = ($resolve['port'] != null) ? (int)$resolve['port'] : $port;
+            $resolve = $this->createSrvResolver()->resolve($host, $port);
+            $host = $resolve['host'];
+            $port = $resolve['port'];
         }
 
         $this->host = $host;
@@ -80,18 +83,74 @@ abstract class AbstractStatus implements StatusInterface
      * @throws ConnectionException Thrown when failed to connect to resource
      * @throws ReceiveStatusException Thrown when the status has not been obtained or resolved
      */
-    public function connect(): StatusInterface
+    public function fetch(): static
+    {
+        return $this->fetchWithConnection(function (): void {
+            $this->_connect($this->host, $this->port);
+        });
+    }
+
+    public function connect(): static
+    {
+        return $this->fetch();
+    }
+
+    public function status(): StatusState
+    {
+        return $this->statusState;
+    }
+
+    /**
+     * @param callable(): void $openConnection
+     * @throws ConnectionException Thrown when failed to connect to resource
+     * @throws ReceiveStatusException Thrown when the status has not been obtained or resolved
+     */
+    protected function fetchWithConnection(callable $openConnection): static
     {
         if ($this->isConnected()) {
             $this->disconnect();
         }
 
-        $this->_connect($this->host, $this->port);
-        $this->getStatus();
+        $this->resetState();
+        $this->statusState = StatusState::Fetching;
+
+        try {
+            $openConnection();
+            $this->getStatus();
+            $this->result = $this->createResult();
+            $this->statusState = StatusState::Fetched;
+        } catch (Throwable $exception) {
+            $this->resetState();
+            $this->statusState = StatusState::Failed;
+            $this->disconnect();
+            throw $exception;
+        }
+
         return $this;
     }
 
-    abstract protected function getStatus();
+    abstract protected function getStatus(): void;
+
+    protected function createSrvResolver(): SrvResolver
+    {
+        return new SrvResolver();
+    }
+
+    protected function resetState(): void
+    {
+        $this->info = [];
+        $this->result = null;
+    }
+
+    /**
+     * @throws NotConnectedException
+     */
+    protected function assertFetched(): void
+    {
+        if ($this->statusState !== StatusState::Fetched) {
+            throw new NotConnectedException('The status has not been fetched.');
+        }
+    }
 
     /**
      *
@@ -103,8 +162,9 @@ abstract class AbstractStatus implements StatusInterface
 
     public function disconnect(): void
     {
-        if ($this->isConnected()) {
-            if (fclose($this->socket)) {
+        $socket = $this->socket;
+        if (is_resource($socket)) {
+            if (fclose($socket)) {
                 $this->socket = null;
             }
         }
@@ -124,11 +184,34 @@ abstract class AbstractStatus implements StatusInterface
      */
     public function getInfo(): array
     {
-        if (!$this->isConnected()) {
-            throw new NotConnectedException('The connection has not been established.');
-        }
+        $this->assertFetched();
 
         return $this->info;
+    }
+
+    /**
+     * @inheritDoc
+     * @throws NotConnectedException
+     */
+    public function getResult(): StatusResultInterface
+    {
+        $this->assertFetched();
+
+        if ($this->result === null) {
+            throw new NotConnectedException('The status has not been fetched.');
+        }
+
+        return $this->result;
+    }
+
+    protected function createResult(): StatusResultInterface
+    {
+        return new GenericStatusResult(
+            $this->info,
+            (string)($this->info['motd'] ?? ''),
+            (int)($this->info['players']['online'] ?? $this->info['numplayers'] ?? 0),
+            (int)($this->info['players']['max'] ?? $this->info['maxplayers'] ?? 0)
+        );
     }
 
     /**
@@ -148,24 +231,24 @@ abstract class AbstractStatus implements StatusInterface
     }
 
     /**
-     * @return int
+     * @return float
      */
-    public function getTimeout(): int
+    public function getTimeout(): float
     {
         return $this->timeout;
     }
 
     /**
      * @inheritDoc
-     * @throws InvalidArgumentException The timeout must be a positive integer.
+     * @throws InvalidArgumentException The timeout must be greater than zero.
      */
-    public function setTimeout(int $timeout): void
+    public function setTimeout(int|float $timeout): void
     {
         if ($timeout <= 0) {
-            throw new InvalidArgumentException("The timeout must be a positive integer.");
+            throw new InvalidArgumentException("The timeout must be greater than zero.");
         }
 
-        $this->timeout = $timeout;
+        $this->timeout = (float)$timeout;
     }
 
     /**
@@ -197,19 +280,40 @@ abstract class AbstractStatus implements StatusInterface
      */
     protected function _connect(string $host, int $port): void
     {
-        $socket = @fsockopen($host, $port, $err_no, $err_str, (float)$this->timeout);
+        $socket = @fsockopen($host, $port, $err_no, $err_str, $this->timeout);
 
         if ($err_no || !is_resource($socket)) {
             throw new ConnectionException('Failed to connect or create a socket: ' . $err_str);
         }
 
         $this->socket = $socket;
-        stream_set_timeout($this->socket, $this->timeout);
+        $this->applyStreamTimeout();
+    }
+
+    protected function applyStreamTimeout(): void
+    {
+        $seconds = (int)floor($this->timeout);
+        $microseconds = (int)round(($this->timeout - $seconds) * 1_000_000);
+
+        stream_set_timeout($this->socket(), $seconds, $microseconds);
     }
 
     /**
-     * @param array $data
-     * @return array
+     * @return resource
+     * @throws ReceiveStatusException
+     */
+    protected function socket()
+    {
+        if (!is_resource($this->socket)) {
+            throw new ReceiveStatusException('Socket is not open.');
+        }
+
+        return $this->socket;
+    }
+
+    /**
+     * @param array<mixed> $data
+     * @return array<mixed>
      */
     protected function encoding(array $data): array
     {

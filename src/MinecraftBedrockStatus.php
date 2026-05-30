@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 /**
- * @author Jakub Gniecki <kubuspl@onet.eu>
+ * @author Jakub Gniecki <jgniecki.contact@gmail.com>
  * @copyright
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -11,7 +11,10 @@ namespace DevLancer\MinecraftStatus;
 
 use DevLancer\MinecraftStatus\Exception\ConnectionException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
+use DevLancer\MinecraftStatus\Exception\ProtocolException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
+use DevLancer\MinecraftStatus\Parser\BedrockStatusParser;
+use DevLancer\MinecraftStatus\Result\BedrockStatusResult;
 use InvalidArgumentException;
 
 class MinecraftBedrockStatus extends AbstractStatus implements ProtocolInterface
@@ -20,29 +23,24 @@ class MinecraftBedrockStatus extends AbstractStatus implements ProtocolInterface
      * QueryBedrock constructor.
      *
      * @inheritDoc
-     * @throws InvalidArgumentException The $timeout must be a positive integer
+     * @throws InvalidArgumentException The $timeout must be greater than zero
      */
-    public function __construct(string $host, int $port = 19132, int $timeout = 3, bool $resolveSRV = true)
+    public function __construct(string $host, int $port = 19132, int|float $timeout = 3, bool $resolveSRV = true)
     {
         parent::__construct($host, $port, $timeout, $resolveSRV);
     }
 
     /**
      * @inheritDoc
-     * @return MinecraftBedrockStatus
      * @throws ConnectionException Thrown when failed to connect to resource
      * @throws ReceiveStatusException Thrown when the status has not been obtained or resolved
      */
-    public function connect(): StatusInterface
+    public function fetch(): static
     {
-        if ($this->isConnected()) {
-            $this->disconnect();
-        }
-
-        $this->_connect('udp://' . $this->host, $this->port);
-        stream_set_blocking($this->socket, true);
-        $this->getStatus();
-        return $this;
+        return $this->fetchWithConnection(function (): void {
+            $this->_connect('udp://' . $this->host, $this->port);
+            stream_set_blocking($this->socket(), true);
+        });
     }
 
     public function getProtocol(): int
@@ -50,9 +48,24 @@ class MinecraftBedrockStatus extends AbstractStatus implements ProtocolInterface
         return $this->getInfo()['protocol'];
     }
 
+    protected function createResult(): BedrockStatusResult
+    {
+        return new BedrockStatusResult(
+            $this->info,
+            (string)($this->info['hostname'] ?? ''),
+            (int)($this->info['numplayers'] ?? 0),
+            (int)($this->info['maxplayers'] ?? 0),
+            (int)($this->info['protocol'] ?? 0),
+            isset($this->info['version']) ? (string)$this->info['version'] : null,
+            isset($this->info['game_mode']) ? (string)$this->info['game_mode'] : null,
+            isset($this->info['map']) ? (string)$this->info['map'] : null,
+            isset($this->info['server_id']) ? (string)$this->info['server_id'] : null,
+            (int)($this->info['ipv4port'] ?? 0),
+            (int)($this->info['ipv6port'] ?? 0)
+        );
+    }
+
     /**
-     * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
-     *
      * @throws ReceiveStatusException
      */
     protected function getStatus(): void
@@ -64,26 +77,26 @@ class MinecraftBedrockStatus extends AbstractStatus implements ProtocolInterface
         $command .= pack('Q', 2);
         $length = strlen($command);
 
-        if ($length !== fwrite($this->socket, $command, $length)) {
+        if ($length !== fwrite($this->socket(), $command, $length)) {
             throw new ReceiveStatusException("Failed to write on socket.");
         }
 
-        $data = fread($this->socket, 4096);
+        $data = fread($this->socket(), 4096);
 
         if ($data === false) {
             throw new ReceiveStatusException("Failed to read from socket.");
         }
 
-        if ($data[0] !== "\x1C") {
-            throw new ReceiveStatusException("First byte is not ID_UNCONNECTED_PONG.");
-        }
-
-        if (substr($data, 17, 16) !== $OFFLINE_MESSAGE_DATA_ID) {
-            throw new ReceiveStatusException("Magic bytes do not match.");
-        }
-
-        $info = $this->resolveStatus($data);
+        $info = $this->createBedrockStatusParser()->parse($data, $OFFLINE_MESSAGE_DATA_ID);
         $this->info = $this->encoding($info);
+    }
+
+    /**
+     * @throws ProtocolException
+     */
+    protected function validatePong(string $data, string $offlineMessageDataId): void
+    {
+        $this->createBedrockStatusParser()->validatePong($data, $offlineMessageDataId);
     }
 
     /**
@@ -92,36 +105,12 @@ class MinecraftBedrockStatus extends AbstractStatus implements ProtocolInterface
      */
     protected function resolveStatus(string $data): array
     {
-        // TODO: What are the 2 bytes after the magic?
-        $data = substr($data, 35);
-        $data = explode(';', $data);
-        $offset = count($data) - 13;
-        if ($offset < 0) {
-            $offset = 0;
-        }
+        return $this->createBedrockStatusParser()->resolveStatus($data);
+    }
 
-        $info = [
-            'game_id' => $data[0] ?? null,
-            'hostname' => [],
-            'protocol' => (int)($data[2 + $offset] ?? 0),
-            'version' => $data[3 + $offset] ?? null,
-            'numplayers' => (isset($data[4 + $offset])) ? (int)$data[4 + $offset] : 0,
-            'maxplayers' => (isset($data[5 + $offset])) ? (int)$data[5 + $offset] : 0,
-            'server_id' => $data[6 + $offset] ?? null,
-            'map' => $data[7 + $offset] ?? null,
-            'game_mode' => $data[8 + $offset] ?? null,
-            'nintendo_limited' => $data[9 + $offset] ?? null,
-            'ipv4port' => (isset($data[10 + $offset])) ? (int)$data[10 + $offset] : 0,
-            'ipv6port' => (isset($data[11 + $offset])) ? (int)$data[11 + $offset] : 0,
-            'extra' => $data[12 + $offset] ?? null, // What is this?
-        ];
-
-        for ($i = 0; $i <= $offset; $i++) {
-            $info['hostname'][] = $data[1 + $i];
-        }
-        $info['hostname'] = implode(";", $info['hostname']);
-
-        return $info;
+    protected function createBedrockStatusParser(): BedrockStatusParser
+    {
+        return new BedrockStatusParser();
     }
 
     /**
@@ -160,7 +149,7 @@ final class QueryBedrock extends MinecraftBedrockStatus
     /**
      * @deprecated Since version 3.1. Please use class DevLancer\MinecraftStatus\MinecraftBedrockStatus instead.
      */
-    public function __construct(string $host, int $port = 19132, int $timeout = 3, bool $resolveSRV = true)
+    public function __construct(string $host, int $port = 19132, int|float $timeout = 3, bool $resolveSRV = true)
     {
         trigger_error(
             sprintf('Class %s is deprecated and will be removed in future versions. Please use class %s instead.', __CLASS__, MinecraftBedrockStatus::class),

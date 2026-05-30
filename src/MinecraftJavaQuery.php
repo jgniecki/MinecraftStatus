@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 /**
- * @author Jakub Gniecki <kubuspl@onet.eu>
+ * @author Jakub Gniecki <jgniecki.contact@gmail.com>
  * @copyright
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -11,10 +11,15 @@ namespace DevLancer\MinecraftStatus;
 
 use DevLancer\MinecraftStatus\Exception\ConnectionException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
+use DevLancer\MinecraftStatus\Exception\ProtocolException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
+use DevLancer\MinecraftStatus\Parser\JavaQueryParser;
+use DevLancer\MinecraftStatus\Result\JavaQueryResult;
 
 class MinecraftJavaQuery extends AbstractStatus implements MinecraftJavaQueryInterface
 {
+    private const SESSION_ID = "\x01\x02\x03\x04";
+
     /**
      * @var string[]
      */
@@ -22,20 +27,33 @@ class MinecraftJavaQuery extends AbstractStatus implements MinecraftJavaQueryInt
 
     /**
      * @inheritDoc
-     * @return MinecraftJavaQuery
      * @throws ConnectionException Thrown when failed to connect to resource
      * @throws ReceiveStatusException Thrown when the status has not been obtained or resolved
      */
-    public function connect(): StatusInterface
+    public function fetch(): static
     {
-        if ($this->isConnected()) {
-            $this->disconnect();
-        }
+        return $this->fetchWithConnection(function (): void {
+            $this->_connect('udp://' . $this->host, $this->port);
+            stream_set_blocking($this->socket(), true);
+        });
+    }
 
-        $this->_connect('udp://' . $this->host, $this->port);
-        stream_set_blocking($this->socket, true);
-        $this->getStatus();
-        return $this;
+    protected function resetState(): void
+    {
+        parent::resetState();
+        $this->players = [];
+    }
+
+    protected function createResult(): JavaQueryResult
+    {
+        return new JavaQueryResult(
+            $this->info,
+            (string)($this->info['hostname'] ?? ''),
+            (int)($this->info['numplayers'] ?? 0),
+            (int)($this->info['maxplayers'] ?? 0),
+            (string)($this->info['hostip'] ?? ''),
+            $this->players
+        );
     }
 
 
@@ -45,16 +63,12 @@ class MinecraftJavaQuery extends AbstractStatus implements MinecraftJavaQueryInt
      */
     public function getPlayers(): array
     {
-        if (!$this->isConnected()) {
-            throw new NotConnectedException('The connection has not been established.');
-        }
+        $this->assertFetched();
 
         return $this->players;
     }
 
     /**
-     * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
-     *
      * @throws ReceiveStatusException
      */
     protected function getStatus(): void
@@ -63,39 +77,27 @@ class MinecraftJavaQuery extends AbstractStatus implements MinecraftJavaQueryInt
         $data = $this->writeData(0x00, $append);
 
         if (!$data) {
-            throw new ReceiveStatusException('Failed to receive status.');
+            throw new ProtocolException('Failed to receive status.');
         }
 
-        $data = substr($data, 11);
-        $data = explode("\x00\x00\x01player_\x00\x00", $data);
-
-        if (count($data) !== 2) {
-            throw new ReceiveStatusException('Failed to parse server\'s response.');
-        }
-
-        if (is_string($data[1])) {
-            $this->players = $this->resolvePlayerList($data[1]);
-        }
-
-        $data = explode("\x00", $data[0]);
-        $info = [];
-        for ($i = 1; $i < count($data); $i += 2) {
-            $info[$data[$i - 1]] = $data[$i];
-        }
-
-        $this->info = $this->encoding($info);
+        $result = $this->createJavaQueryParser()->parse($data);
+        $this->players = $this->encoding($result['players']);
+        $this->info = $this->encoding($result['info']);
         $this->info['hostip'] = gethostbyname($this->host);
     }
 
     /**
      * @param string $data
-     * @return array
+     * @return array<mixed>
      */
     protected function resolvePlayerList(string $data): array
     {
-        $players = substr($data, 0, -2);
-        $players = explode("\x00", $players);
-        return $this->encoding($players);
+        return $this->encoding($this->createJavaQueryParser()->resolvePlayerList($data));
+    }
+
+    protected function createJavaQueryParser(): JavaQueryParser
+    {
+        return new JavaQueryParser();
     }
 
     /**
@@ -126,8 +128,6 @@ class MinecraftJavaQuery extends AbstractStatus implements MinecraftJavaQueryInt
     }
 
     /**
-     * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
-     *
      * @return string
      * @throws ReceiveStatusException
      */
@@ -136,15 +136,18 @@ class MinecraftJavaQuery extends AbstractStatus implements MinecraftJavaQueryInt
         $data = $this->writeData(0x09);
 
         if (!$data) {
-            throw new ReceiveStatusException('Failed to receive challenge.');
+            throw new ProtocolException('Failed to receive challenge.');
         }
 
-        return pack('N', $data);
+        $challenge = rtrim($data, "\x00");
+        if (!is_numeric($challenge)) {
+            throw new ProtocolException('Failed to receive challenge.');
+        }
+
+        return pack('N', (int)$challenge);
     }
 
     /**
-     * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
-     *
      * @param int $command
      * @param string $append
      * @return string|null
@@ -152,20 +155,20 @@ class MinecraftJavaQuery extends AbstractStatus implements MinecraftJavaQueryInt
      */
     protected function writeData(int $command, string $append = ""): ?string
     {
-        $command = pack('c*', 0xFE, 0xFD, $command, 0x01, 0x02, 0x03, 0x04) . $append;
-        $length = strlen($command);
+        $packet = pack('c*', 0xFE, 0xFD, $command) . self::SESSION_ID . $append;
+        $length = strlen($packet);
 
-        if ($length !== fwrite($this->socket, $command, $length)) {
+        if ($length !== fwrite($this->socket(), $packet, $length)) {
             throw new ReceiveStatusException("Failed to write on socket.");
         }
 
-        $data = fread($this->socket, 4096);
+        $data = fread($this->socket(), 4096);
 
         if ($data === false) {
             throw new ReceiveStatusException("Failed to read from socket.");
         }
 
-        if (strlen($data) < 5 || $data[0] != $command[2]) {
+        if (strlen($data) < 5 || ord($data[0]) !== $command || substr($data, 1, 4) !== self::SESSION_ID) {
             return null;
         }
 
@@ -181,7 +184,7 @@ final class Query extends MinecraftJavaQuery
     /**
      * @deprecated Since version 3.1. Please use class DevLancer\MinecraftStatus\MinecraftJavaQuery instead.
      */
-    public function __construct(string $host, int $port = 25565, int $timeout = 3, bool $resolveSRV = true)
+    public function __construct(string $host, int $port = 25565, int|float $timeout = 3, bool $resolveSRV = true)
     {
         trigger_error(
             sprintf('Class %s is deprecated and will be removed in future versions. Please use class %s instead.', __CLASS__, MinecraftJavaQuery::class),

@@ -3,24 +3,33 @@ name: CI
 permissions:
   contents: read
 
-on: [push]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
 
 jobs:
   php:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php: ['7.4', '8.0', '8.1', '8.2', '8.3']
+        php: ['8.1', '8.2', '8.3', '8.4']
     steps:
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
       with:
         php-version: ${{ matrix.php }}
-    - uses: actions/checkout@v4
+        extensions: mbstring, json, iconv, dom, xml, xmlwriter
+    - uses: actions/checkout@v6
 
     - name: Install dependencies
       run: composer install --no-interaction --no-progress
 
+    - name: Check code style
+      run: composer cs-check
+
     - name: Run phpstan
-      run: php vendor/bin/phpstan
-      continue-on-error: true
+      run: composer analyse
+
+    - name: Run tests
+      run: composer test

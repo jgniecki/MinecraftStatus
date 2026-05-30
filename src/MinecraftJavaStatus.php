@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 /**
- * @author Jakub Gniecki <kubuspl@onet.eu>
+ * @author Jakub Gniecki <jgniecki.contact@gmail.com>
  * @copyright
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -9,9 +9,12 @@
 
 namespace DevLancer\MinecraftStatus;
 
-use DevLancer\MinecraftStatus\Exception\ConnectionException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
+use DevLancer\MinecraftStatus\Exception\ProtocolException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
+use DevLancer\MinecraftStatus\Exception\TimeoutException;
+use DevLancer\MinecraftStatus\Parser\JavaStatusParser;
+use DevLancer\MinecraftStatus\Result\JavaStatusResult;
 
 class MinecraftJavaStatus extends AbstractStatus implements PlayerListInterface, FaviconInterface, DelayInterface, ProtocolInterface
 {
@@ -22,16 +25,11 @@ class MinecraftJavaStatus extends AbstractStatus implements PlayerListInterface,
 
     protected int $delay = 0;
 
-    /**
-     * @inheritDoc
-     * @return MinecraftJavaStatus
-     * @throws ConnectionException Thrown when failed to connect to resource
-     * @throws ReceiveStatusException Thrown when the status has not been obtained or resolved
-     */
-    public function connect(): StatusInterface
+    protected function resetState(): void
     {
-        parent::connect();
-        return $this;
+        parent::resetState();
+        $this->players = [];
+        $this->delay = 0;
     }
 
     /**
@@ -68,15 +66,32 @@ class MinecraftJavaStatus extends AbstractStatus implements PlayerListInterface,
         return $this->delay;
     }
 
+    protected function createResult(): JavaStatusResult
+    {
+        $motd = $this->info['description'] ?? '';
+        $version = $this->info['version'] ?? [];
+        $players = $this->info['players'] ?? [];
+
+        return new JavaStatusResult(
+            $this->info,
+            is_array($motd) ? (string)json_encode($motd) : (string)$motd,
+            (int)(is_array($players) ? ($players['online'] ?? 0) : 0),
+            (int)(is_array($players) ? ($players['max'] ?? 0) : 0),
+            (int)(is_array($version) ? ($version['protocol'] ?? 0) : 0),
+            is_array($version) && isset($version['name']) ? (string)$version['name'] : null,
+            (string)($this->info['favicon'] ?? ''),
+            $this->delay,
+            $this->players
+        );
+    }
+
     /**
      * @inheritDoc
      * @throws NotConnectedException
      */
     public function getPlayers(): array
     {
-        if (!$this->isConnected()) {
-            throw new NotConnectedException('The connection has not been established.');
-        }
+        $this->assertFetched();
 
         return $this->players;
     }
@@ -101,37 +116,39 @@ class MinecraftJavaStatus extends AbstractStatus implements PlayerListInterface,
     }
 
     /**
-     * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
-     *
      * @throws ReceiveStatusException*
      */
     protected function getStatus(): void
     {
         $data = "\x00"; // packet ID = 0 (varint)
         $data .= "\xff\xff\xff\xff\x0f"; //Protocol version (varint)
-        $data .= pack('c', strlen($this->host)) . $this->host; // Server (varint len + UTF-8 addr)
+        $data .= $this->writeVarInt(strlen($this->host)) . $this->host; // Server (varint len + UTF-8 addr)
         $data .= pack('n', $this->port); // Server port (unsigned short)
         $data .= "\x01"; // Next state: status (varint)
-        $data = pack('c', strlen($data)) . $data; // prepend length of packet ID + data
+        $data = $this->writeVarInt(strlen($data)) . $data; // prepend length of packet ID + data
         $timestart = microtime(true); // for read timeout purposes
-        fwrite($this->socket, $data . "\x01\x00"); // handshake
+        fwrite($this->socket(), $data . "\x01\x00"); // handshake
 
         $length = $this->readVarInt(); // full packet length
         if ($length < 10) {
-            throw new ReceiveStatusException('Failed to receive status.');
+            throw new ProtocolException('Failed to receive status.');
         }
 
-        $this->readVarInt(); // packet type, in server ping it's 0
+        $packetId = $this->readVarInt(); // packet type, in server ping it's 0
+        if ($packetId !== 0) {
+            throw new ProtocolException('Failed to receive status.');
+        }
+
         $length = $this->readVarInt(); // string length
         if ($length < 2) {
-            throw new ReceiveStatusException('Failed to receive status.');
+            throw new ProtocolException('Failed to receive status.');
         }
 
         $data = "";
 
         do {
             if (microtime(true) - $timestart > $this->timeout) {
-                throw new ReceiveStatusException('Server read timed out');
+                throw new TimeoutException('Server read timed out');
             }
 
             $remainder = $length - strlen($data);
@@ -139,51 +156,38 @@ class MinecraftJavaStatus extends AbstractStatus implements PlayerListInterface,
                 break;
             }
 
-            $block = fread($this->socket, $remainder);
+            $block = fread($this->socket(), $remainder);
             if ($this->delay == 0) {
                 $this->delay = (int)floor((microtime(true) - $timestart) * 1000);
             }
 
             if (!$block) {
-                throw new ReceiveStatusException('Server returned too few data');
+                throw new ProtocolException('Server returned too few data');
             }
 
             $data .= $block;
         } while (strlen($data) < $length);
-        $result = json_decode($data, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new ReceiveStatusException('JSON parsing failed: ' . json_last_error_msg());
-        }
-
-        if (!is_array($result)) {
-            throw new ReceiveStatusException('The server did not return the information');
-        }
-
-        $result = $this->encoding($result);
-        $this->players = $this->resolvePlayerList($result);
-        $this->info = $result;
+        $result = $this->createJavaStatusParser()->parse($data);
+        $this->info = $this->encoding($result['info']);
+        $this->players = $this->encoding($result['players']);
     }
 
     /**
-     * @param array $data <string, mixed>
-     * @return array
+     * @param array<string, mixed> $data
+     * @return array<mixed>
      */
     protected function resolvePlayerList(array $data): array
     {
-        $players = [];
-        if (isset($data['players']['sample'])) {
-            foreach ($data['players']['sample'] as $value) {
-                $players[] = $value;
-            }
-        }
+        return $this->createJavaStatusParser()->resolvePlayerList($data);
+    }
 
-        return $players;
+    protected function createJavaStatusParser(): JavaStatusParser
+    {
+        return new JavaStatusParser();
     }
 
 
     /**
-     * Copied from https://github.com/xPaw/PHP-Minecraft-Query/
-     *
      * @return int
      * @throws ReceiveStatusException
      */
@@ -193,7 +197,7 @@ class MinecraftJavaStatus extends AbstractStatus implements PlayerListInterface,
         $j = 0;
 
         while (true) {
-            $k = @fgetc($this->socket);
+            $k = @fgetc($this->socket());
             if ($k === false) {
                 return 0;
             }
@@ -202,7 +206,7 @@ class MinecraftJavaStatus extends AbstractStatus implements PlayerListInterface,
             $i |= ($k & 0x7F) << $j++ * 7;
 
             if ($j > 5) {
-                throw new ReceiveStatusException('VarInt too big');
+                throw new ProtocolException('VarInt too big');
             }
 
             if (($k & 0x80) != 128) {
@@ -211,6 +215,24 @@ class MinecraftJavaStatus extends AbstractStatus implements PlayerListInterface,
         }
 
         return $i;
+    }
+
+    private function writeVarInt(int $value): string
+    {
+        $data = '';
+
+        do {
+            $byte = $value & 0x7F;
+            $value >>= 7;
+
+            if ($value !== 0) {
+                $byte |= 0x80;
+            }
+
+            $data .= chr($byte);
+        } while ($value !== 0);
+
+        return $data;
     }
 }
 
@@ -222,7 +244,7 @@ final class Ping extends MinecraftJavaStatus
     /**
      * @deprecated Since version 3.1. Please use class DevLancer\MinecraftStatus\MinecraftJavaStatus instead.
      */
-    public function __construct(string $host, int $port = 25565, int $timeout = 3, bool $resolveSRV = true)
+    public function __construct(string $host, int $port = 25565, int|float $timeout = 3, bool $resolveSRV = true)
     {
         trigger_error(
             sprintf('Class %s is deprecated and will be removed in future versions. Please use class %s instead.', __CLASS__, MinecraftJavaStatus::class),
