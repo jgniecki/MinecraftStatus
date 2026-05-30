@@ -12,6 +12,7 @@ use DevLancer\MinecraftStatus\Exception\ConnectionException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
 use InvalidArgumentException;
+use Throwable;
 
 abstract class AbstractStatus implements StatusInterface
 {
@@ -47,6 +48,8 @@ abstract class AbstractStatus implements StatusInterface
      */
     protected array $info = [];
 
+    protected StatusState $statusState = StatusState::Idle;
+
     /**
      * @var string
      */
@@ -80,18 +83,67 @@ abstract class AbstractStatus implements StatusInterface
      * @throws ConnectionException Thrown when failed to connect to resource
      * @throws ReceiveStatusException Thrown when the status has not been obtained or resolved
      */
+    public function fetch(): static
+    {
+        return $this->fetchWithConnection(function (): void {
+            $this->_connect($this->host, $this->port);
+        });
+    }
+
     public function connect(): StatusInterface
+    {
+        return $this->fetch();
+    }
+
+    public function status(): StatusState
+    {
+        return $this->statusState;
+    }
+
+    /**
+     * @param callable(): void $openConnection
+     * @throws ConnectionException Thrown when failed to connect to resource
+     * @throws ReceiveStatusException Thrown when the status has not been obtained or resolved
+     */
+    protected function fetchWithConnection(callable $openConnection): static
     {
         if ($this->isConnected()) {
             $this->disconnect();
         }
 
-        $this->_connect($this->host, $this->port);
-        $this->getStatus();
+        $this->resetState();
+        $this->statusState = StatusState::Fetching;
+
+        try {
+            $openConnection();
+            $this->getStatus();
+            $this->statusState = StatusState::Fetched;
+        } catch (Throwable $exception) {
+            $this->resetState();
+            $this->statusState = StatusState::Failed;
+            $this->disconnect();
+            throw $exception;
+        }
+
         return $this;
     }
 
     abstract protected function getStatus();
+
+    protected function resetState(): void
+    {
+        $this->info = [];
+    }
+
+    /**
+     * @throws NotConnectedException
+     */
+    protected function assertFetched(): void
+    {
+        if ($this->statusState !== StatusState::Fetched) {
+            throw new NotConnectedException('The status has not been fetched.');
+        }
+    }
 
     /**
      *
@@ -124,9 +176,7 @@ abstract class AbstractStatus implements StatusInterface
      */
     public function getInfo(): array
     {
-        if (!$this->isConnected()) {
-            throw new NotConnectedException('The connection has not been established.');
-        }
+        $this->assertFetched();
 
         return $this->info;
     }

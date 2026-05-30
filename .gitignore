@@ -2,3 +2,7 @@ composer.phar
 /vendor/
 /.idea
 /.phpdoc
+/.php-cs-fixer.cache
+/.phpunit.cache/
+Dockerfile
+docker-compose.yml

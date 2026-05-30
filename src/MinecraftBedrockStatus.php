@@ -33,15 +33,17 @@ class MinecraftBedrockStatus extends AbstractStatus implements ProtocolInterface
      * @throws ConnectionException Thrown when failed to connect to resource
      * @throws ReceiveStatusException Thrown when the status has not been obtained or resolved
      */
+    public function fetch(): static
+    {
+        return $this->fetchWithConnection(function (): void {
+            $this->_connect('udp://' . $this->host, $this->port);
+            stream_set_blocking($this->socket, true);
+        });
+    }
+
     public function connect(): StatusInterface
     {
-        if ($this->isConnected()) {
-            $this->disconnect();
-        }
-
-        $this->_connect('udp://' . $this->host, $this->port);
-        stream_set_blocking($this->socket, true);
-        $this->getStatus();
+        $this->fetch();
         return $this;
     }
 

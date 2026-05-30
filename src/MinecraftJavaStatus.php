@@ -34,6 +34,13 @@ class MinecraftJavaStatus extends AbstractStatus implements PlayerListInterface,
         return $this;
     }
 
+    protected function resetState(): void
+    {
+        parent::resetState();
+        $this->players = [];
+        $this->delay = 0;
+    }
+
     /**
      * @return int
      * @throws NotConnectedException
@@ -74,9 +81,7 @@ class MinecraftJavaStatus extends AbstractStatus implements PlayerListInterface,
      */
     public function getPlayers(): array
     {
-        if (!$this->isConnected()) {
-            throw new NotConnectedException('The connection has not been established.');
-        }
+        $this->assertFetched();
 
         return $this->players;
     }

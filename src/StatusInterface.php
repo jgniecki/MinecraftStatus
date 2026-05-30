@@ -16,10 +16,24 @@ namespace DevLancer\MinecraftStatus;
 interface StatusInterface
 {
     /**
+     * Fetches server status from the configured host.
+     *
+     * @return static
+     */
+    public function fetch(): static;
+
+    /**
      * Attempts to connect to the given host.
      * @return StatusInterface
      */
     public function connect(): StatusInterface;
+
+    /**
+     * Returns the current lifecycle state of the last status fetch.
+     *
+     * @return StatusState
+     */
+    public function status(): StatusState;
 
     /**
      * Returns information about whether the connection was successful, it can also tell if the server is online
