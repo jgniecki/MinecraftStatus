@@ -1,240 +1,266 @@
 # Minecraft Status
+
 ![](https://img.shields.io/packagist/l/dev-lancer/minecraft-status?style=for-the-badge)
 ![](https://img.shields.io/packagist/dt/dev-lancer/minecraft-status?style=for-the-badge)
 ![](https://img.shields.io/github/v/release/DeveloperLancer/MinecraftStatus?style=for-the-badge)
 ![](https://img.shields.io/packagist/php-v/dev-lancer/minecraft-status?style=for-the-badge)
 
-MinecraftStatus library allows you to communicate with minecraft servers using the most popular protocols.
+Minecraft Status is a PHP 8.1+ library for reading Minecraft server status data. It supports Java Edition status ping, Java Edition Query, Bedrock Edition status and legacy Java servers before Minecraft 1.7.
+
+The V4 API is centered around `fetch()`, `status(): StatusState` and typed result objects returned by `getResult()`. The older `connect()` method and deprecated class aliases are still available for compatibility, but new code should use the explicit V4 names.
 
 ## Installation
-This library can be installed by issuing the following command:
+
 ```bash
 composer require dev-lancer/minecraft-status
 ```
 
-## Differences between MinecraftJavaStatus and MinecraftJavaQuery
+## Which Client Should I Use?
 
-### MinecraftJavaStatus
-MinecraftJavaStatus uses the TCP protocol to communicate with the Minecraft server in the java edition and bedrock edition, it uses the port on which the server is running.
-Ping provides the most necessary information (hostname, motd, favicon, and a sample of players).
-Thanks to its simplicity, it does not require any configuration on the server side, communication works with servers from version 1.7 and above.
+| Client | Server type | Protocol | Server configuration required | Default port |
+|---|---|---|---|---:|
+| `MinecraftJavaStatus` | Java Edition 1.7+ | Status ping over TCP | No | 25565 |
+| `MinecraftJavaQuery` | Java Edition with Query enabled | GameSpy4 Query over UDP | Yes, `enable-query=true` | 25565 |
+| `MinecraftBedrockStatus` | Bedrock Edition | Bedrock/RakNet pong over UDP | No | 19132 |
+| `MinecraftJavaPreOld17Status` | Java Edition before 1.7 | Legacy ping over TCP | No | 25565 |
 
-To communicate with a server which has a version lower than 1.7, use the `MinecraftJavaPreOld17Status` class
+Use `MinecraftJavaStatus` for normal Java Edition servers. Use `MinecraftJavaQuery` only when Query is enabled on the server and you need Query-specific data. Use `MinecraftBedrockStatus` for Bedrock Edition servers.
 
-For bedrock edition servers use class `MinecraftBedrockStatus`
+## Quick Start
 
-
-### MinecraftJavaQuery
-MinecraftJavaQuery uses GameSpy 4 protocol for communication,
-so you should start listening in the server properties.
-Query allows you to request more information about the server,
-but has more security vulnerabilities.
-
-## Usage
-
-### Minecraft Java Edition server with Query
-
-Example: [MinecraftJavaQuery](examples/query.php)
-
-This method uses GameSpy4 protocol, and requires enabling `query` listener in your `server.properties` like this:
-
-> *enable-query=true*<br>
-> *query.port=25565*
+### Java Edition Status
 
 ```php
 <?php
-use \DevLancer\MinecraftStatus\MinecraftJavaQuery;
 
-require_once ("vendor/autoload.php");
+use DevLancer\MinecraftStatus\MinecraftJavaStatus;
 
-$host = ""; //Address server minecraft
-$port = 25565; //from query.port
-$timeout = 3;
-$resolveSVR = true;
+require_once __DIR__ . '/vendor/autoload.php';
 
-$query = new MinecraftJavaQuery($host, $port, $timeout, $resolveSVR);
-$query->connect();
-print_r($query->getInfo());
+$status = new MinecraftJavaStatus('mc.example.com');
+$result = $status->fetch()->getResult();
+
+echo $result->motd();
+echo $result->onlinePlayers() . '/' . $result->maxPlayers();
+echo $result->versionName;
 ```
 
-### Minecraft Bedrock Edition server status
+Example file: [examples/ping.php](examples/ping.php)
 
-Example: [MinecraftBedrockStatus](examples/bedrock.php)
-
-Use this class for bedrock edition servers
-
-In QueryBedrock you do not need to set anything in the properties of the server,
-the port on which the server runs is used to communicate with the server
+### Bedrock Edition Status
 
 ```php
 <?php
-use \DevLancer\MinecraftStatus\MinecraftBedrockStatus;
 
-require_once ("vendor/autoload.php");
+use DevLancer\MinecraftStatus\MinecraftBedrockStatus;
 
-$host = ""; //Address server minecraft
-$port = 19132;
-$timeout = 3;
-$resolveSVR = true;
+require_once __DIR__ . '/vendor/autoload.php';
 
-$query = new MinecraftBedrockStatus($host, $port, $timeout, $resolveSVR);
-$query->connect();
-print_r($query->getInfo());
+$status = new MinecraftBedrockStatus('bedrock.example.com', 19132);
+$result = $status->fetch()->getResult();
+
+echo $result->motd();
+echo $result->onlinePlayers() . '/' . $result->maxPlayers();
+echo $result->version;
 ```
 
-### Minecraft Java Edition server status
+Example file: [examples/bedrock.php](examples/bedrock.php)
 
-Example: [MinecraftJavaStatus](examples/ping.php)
+Bedrock status data is a semicolon-delimited RakNet status string. The parser treats `;` as a field separator and requires the expected Bedrock field count. Vanilla Bedrock Dedicated Server documents `server-name` as a string without semicolons, so the library does not try to guess or rebuild names that contain `;`; such payloads are rejected as invalid responses to avoid shifting protocol, version and player-count fields.
+
+### Java Edition Query
+
+Java Query uses the GameSpy4 Query protocol. The Minecraft server must have Query enabled in `server.properties`:
+
+```properties
+enable-query=true
+query.port=25565
+```
 
 ```php
 <?php
-use \DevLancer\MinecraftStatus\MinecraftJavaStatus;
-use \DevLancer\MinecraftStatus\MinecraftJavaPreOld17Status;
 
-require_once ("vendor/autoload.php");
+use DevLancer\MinecraftStatus\MinecraftJavaQuery;
 
-$host = ""; //Address server minecraft
-$port = 25565;
-$timeout = 3;
-$resolveSVR = true;
+require_once __DIR__ . '/vendor/autoload.php';
 
-$ping = new MinecraftJavaStatus($host, $port, $timeout, $resolveSVR);
-//$ping = new MinecraftJavaPreOld17Status($host, $port, $timeout, $resolveSVR); //use when version is older than Minecraft 1.7
-$ping->connect();
-print_r($ping->getInfo());
+$query = new MinecraftJavaQuery('mc.example.com', 25565);
+$result = $query->fetch()->getResult();
+
+echo $result->motd();
+print_r($result->players);
 ```
 
-If you want to get `ping` info from a server that uses a version older than Minecraft 1.7, then use class `PingPreOld17` instead of `Ping`.
+Example file: [examples/query.php](examples/query.php)
 
-## Methods
+### Legacy Java Servers Before 1.7
 
-### List of methods
-|                   | MinecraftJavaQuery | MinecraftBedrockStatus | MinecraftJavaStatus | MinecraftJavaPreOld17Status |
-|-------------------|--------------------|------------------------|---------------------|-----------------------------|
-| connect()         | X                  | X                      | X                   | X                           |
-| isConnected()     | X                  | X                      | X                   | X                           |
-| disconnect()      | X                  | X                      | X                   | X                           |
-| getPlayers()      | X                  |                        | X                   |                             |
-| getCountPlayers() | X                  | X                      | X                   | X                           |
-| getMaxPlayers()   | X                  | X                      | X                   | X                           |
-| getInfo()         | X                  | X                      | X                   | X                           |
-| getFavicon()      |                    |                        | X                   |                             |
-| getDelay()        |                    |                        | X                   |                             |
-| setTimeout()      | X                  | X                      | X                   | X                           |
-| getTimeout()      | X                  | X                      | X                   | X                           |
-| setEncoding()     | X                  | X                      | X                   | X                           |
-| getEncoding()     | X                  | X                      | X                   | X                           |
-| isResolveSRV()    | X                  | X                      | X                   | X                           |
-| getHost()         | X                  | X                      | X                   | X                           |
-| getPort()         | X                  | X                      | X                   | X                           |
-| getMotd()         | X                  | X                      | X                   | X                           |
-| getProtocol()     |                    | X                      | X                   | X                           | 
-
-### Use before connecting
-
-Sets the timeout for the connection
 ```php
-setTimeout(int $timeout): void
+<?php
+
+use DevLancer\MinecraftStatus\MinecraftJavaPreOld17Status;
+
+require_once __DIR__ . '/vendor/autoload.php';
+
+$status = new MinecraftJavaPreOld17Status('legacy.example.com');
+$result = $status->fetch()->getResult();
+
+echo $result->motd();
+echo $result->onlinePlayers() . '/' . $result->maxPlayers();
 ```
 
-Sets the character encoding for the returned values using the `getInfo()` and `getPlayers()` methods
+## Reading Data
+
+`getResult()` is the preferred V4 read API. It returns a typed result object after a successful `fetch()`:
+
 ```php
-setEncoding(string $encoding): void
+$result = $status->fetch()->getResult();
+
+echo $result->motd();
+echo $result->onlinePlayers();
+echo $result->maxPlayers();
+print_r($result->raw());
 ```
 
-Connects to the server.
-There may be a `ConnectionException` which means that the connection to the server has failed
-or a `ReceiveStatusException` when the connection to the server has succeeded,
-but the communication has not been successful.
-When the method is used again, it disconnects from the server and establishes a new connection
+Each result also exposes protocol-specific readonly properties:
+
+| Result | Extra properties |
+|---|---|
+| `JavaStatusResult` | `protocol`, `versionName`, `favicon`, `delay`, `players` |
+| `JavaQueryResult` | `hostIp`, `players` |
+| `BedrockStatusResult` | `protocol`, `version`, `gameMode`, `map`, `serverId`, `ipv4Port`, `ipv6Port` |
+| `LegacyJavaStatusResult` | `protocol`, `versionName` |
+
+`getInfo()` is still available as the compatible raw array export:
+
 ```php
-connect(): self
+$status->fetch();
+
+print_r($status->getInfo());
 ```
 
-### Use when you are connected
+Convenience getters remain available for existing code:
 
-Disconnects the connection to the server
-```php
-disconnect(): void
-```
-
-Using the following methods when not connected to the server will throw a `NotConnectedException` exception,
-in case you have successfully connected to the server but the communication does not work then they will return a default value of empty
-
-It returns a full array with the information it was able to obtain.
 ```php
 getInfo(): array
-```
-
-Returns arrays of users
-```php
-getPlayers(): array
-```
-
-Returns the number of online players
-```php
+getResult(): StatusResultInterface
 getCountPlayers(): int
-```
-
-Returns the number of server slots
-```php
 getMaxPlayers(): int
-```
-
-Returns the favicon as a string
-```php
-getFavicon(): string
-```
-
-Returns the connection delay [ms]
-```php
-getDelay(): int
-```
-
-Returns a motd of the server
-```php
 getMotd(): string
 ```
 
-Returns the server protocol number
+Additional getters exist on specific clients:
+
+| Method | Java Status | Java Query | Bedrock Status | Legacy Java |
+|---|---:|---:|---:|---:|
+| `getPlayers()` | Yes | Yes | No | No |
+| `getFavicon()` | Yes | No | No | No |
+| `getDelay()` | Yes | No | No | No |
+| `getProtocol()` | Yes | No | Yes | Yes |
+
+## Lifecycle
+
+`fetch()` opens the transport, reads the server response, parses it and stores the result. Calling it again refreshes the stored result.
+
 ```php
-getProtocol(): int
+use DevLancer\MinecraftStatus\StatusState;
+
+$status = new MinecraftJavaStatus('mc.example.com');
+
+$status->status(); // StatusState::Idle
+
+$status->fetch();
+$status->status(); // StatusState::Fetched
+
+$status->disconnect();
+$status->status(); // StatusState::Fetched
+
+print_r($status->getInfo());
 ```
 
-### Use independently of the connection
+`disconnect()` closes only the transport. It does not clear a successfully fetched result. If a later `fetch()` fails, the previous result is cleared and `status()` becomes `StatusState::Failed`.
 
-Returns the server host
+`isConnected()` reports only whether the socket is currently open. Use `status()` to check the result lifecycle.
+
+## Errors
+
+The library uses exceptions for connection, transport and response failures:
+
 ```php
-getHost(): string
+use DevLancer\MinecraftStatus\Exception\ConnectionException;
+use DevLancer\MinecraftStatus\Exception\InvalidResponseException;
+use DevLancer\MinecraftStatus\Exception\NotConnectedException;
+use DevLancer\MinecraftStatus\Exception\ProtocolException;
+use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
+use DevLancer\MinecraftStatus\Exception\TimeoutException;
+use DevLancer\MinecraftStatus\MinecraftJavaStatus;
+
+try {
+    $status = new MinecraftJavaStatus('mc.example.com');
+    $result = $status->fetch()->getResult();
+
+    echo $result->motd();
+} catch (ConnectionException $exception) {
+    // The socket could not be opened.
+} catch (TimeoutException $exception) {
+    // The server did not answer in time.
+} catch (ProtocolException $exception) {
+    // The server response did not match the protocol.
+} catch (InvalidResponseException $exception) {
+    // The response payload could not be parsed into a valid status.
+} catch (ReceiveStatusException $exception) {
+    // Compatibility catch for status receive failures.
+} catch (NotConnectedException $exception) {
+    // Data was requested before a successful fetch().
+}
 ```
 
-Returns a port
+`TimeoutException`, `ProtocolException` and `InvalidResponseException` extend `ReceiveStatusException`, so older `catch (ReceiveStatusException $exception)` blocks still work.
+
+## Timeout, Encoding And SRV Records
+
+The constructor accepts host, port, timeout and SRV resolving flag:
+
 ```php
-getPort(): int
+$status = new MinecraftJavaStatus(
+    host: 'mc.example.com',
+    port: 25565,
+    timeout: 0.5,
+    resolveSRV: true
+);
 ```
 
-Returns the character encoding used to encode the values in the `getInfo()` and `getPlayers()` methods.
+Timeouts accept `int|float` seconds. Values must be greater than zero.
+
 ```php
-getEncoding(): string
+$status->setTimeout(1.5);
+$status->setEncoding('UTF-8');
+$status->fetch();
 ```
 
-Returns a timeout.
+SRV lookup is enabled by default. Pass `false` as the fourth constructor argument to disable it:
+
 ```php
-getTimeout(): int
+$status = new MinecraftJavaStatus('mc.example.com', 25565, 3, false);
 ```
 
-Returns `true` when a successful connection to the server is made regardless of whether a `ReceiveStatusException` exception is thrown.
+SRV resolution ignores literal IPv4 and IPv6 hosts, validates SRV records, normalizes trailing dots and sorts candidates by priority ascending and weight descending.
+
+## Compatibility
+
+`connect()` remains available as an alias of `fetch()` for code migrating from older versions:
+
 ```php
-isConnected(): bool
+$status->connect();
 ```
 
-Returns `true` when an attempt to resolve the SRV occurs on a connection, regardless of the result.
-```php
-isResolveSRV(): bool
-```
+The deprecated aliases `Ping`, `Query`, `QueryBedrock` and `PingPreOld17` still exist, but new code should use `MinecraftJavaStatus`, `MinecraftJavaQuery`, `MinecraftBedrockStatus` and `MinecraftJavaPreOld17Status`.
 
-## SRV DNS record
-The library allows automatic resolution of SRV records, by default the service is enabled, to disable it you must specify `false` in the fourth parameter of the constructor
+See [UPGRADE-4.0.md](UPGRADE-4.0.md) for migration notes from V3.
+
+## Development Notes
+
+Technical planning documents live in [docs/](docs/README.md). They describe the V4 implementation plan, test plan and compatibility decisions for maintainers.
 
 ## License
 

@@ -1,45 +1,36 @@
 <?php declare(strict_types=1);
-/**
- * @author Jakub Gniecki <kubuspl@onet.eu>
- * @copyright
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
 
 use DevLancer\MinecraftStatus\Exception\ConnectionException;
-use DevLancer\MinecraftStatus\Exception\NotConnectedException;
+use DevLancer\MinecraftStatus\Exception\InvalidResponseException;
+use DevLancer\MinecraftStatus\Exception\ProtocolException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
+use DevLancer\MinecraftStatus\Exception\TimeoutException;
 use DevLancer\MinecraftStatus\MinecraftJavaQuery;
-use DevLancer\MinecraftStatus\Query;
 
-require_once '../vendor/autoload.php';
-echo "MinecraftStatus\n<br>";
+require_once __DIR__ . '/../vendor/autoload.php';
 
-$query = new MinecraftJavaQuery("mc.server-query.loc");
+$query = new MinecraftJavaQuery('mc.server-query.loc');
 
 try {
-    print_r($query->getInfo()); //Don't do it that way,
-} catch (NotConnectedException $e) {
-    echo $e->getMessage() . "\n<br>";
-}
+    $result = $query->fetch()->getResult();
 
-//Connection to the server
-try {
-    $query->connect();
-} catch (ConnectionException $e) {
-    //When the server is probably offline
-    echo $e->getMessage() . "\n<br>";
-} catch (ReceiveStatusException $e) {
-    //When communication with the server failed
-    //Query communication is probably disabled
-    print_r($query->getInfo()); //Return empty array
-    echo $e->getMessage() . "\n<br>";
-}
+    echo sprintf(
+        "Server %s:%d answered Query\n",
+        $query->getHost(),
+        $query->getPort()
+    );
+    echo sprintf("MOTD: %s\n", $result->motd());
+    echo sprintf("Players: %d/%d\n", $result->onlinePlayers(), $result->maxPlayers());
+    echo sprintf("Host IP: %s\n", $result->hostIp);
 
-if ($query->isConnected()) {
-    echo sprintf("Server %s:%d is online", $query->getHost(), $query->getPort()) . "\n<br>";
-    print_r($query->getInfo()); //When the array is empty, it probably failed to communicate properly with the server. Previously, a ReceiveStatusException exception was thrown
-    print_r($query->getPlayers());
-} else {
-    echo sprintf("Server %s:%d is offline", $query->getHost(), $query->getPort()) . "\n<br>";
+    print_r($result->players);
+    print_r($result->raw());
+} catch (ConnectionException $exception) {
+    echo "Connection failed: " . $exception->getMessage() . "\n";
+} catch (TimeoutException $exception) {
+    echo "Server read timed out: " . $exception->getMessage() . "\n";
+} catch (ProtocolException | InvalidResponseException $exception) {
+    echo "Invalid Query response: " . $exception->getMessage() . "\n";
+} catch (ReceiveStatusException $exception) {
+    echo "Query could not be received. Check enable-query and query.port: " . $exception->getMessage() . "\n";
 }

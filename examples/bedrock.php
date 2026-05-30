@@ -1,42 +1,36 @@
 <?php declare(strict_types=1);
-/**
- * @author Jakub Gniecki <kubuspl@onet.eu>
- * @copyright
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
 
 use DevLancer\MinecraftStatus\Exception\ConnectionException;
-use DevLancer\MinecraftStatus\Exception\NotConnectedException;
+use DevLancer\MinecraftStatus\Exception\InvalidResponseException;
+use DevLancer\MinecraftStatus\Exception\ProtocolException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
+use DevLancer\MinecraftStatus\Exception\TimeoutException;
 use DevLancer\MinecraftStatus\MinecraftBedrockStatus;
 
-require_once '../vendor/autoload.php';
-echo "MinecraftStatus\n<br>";
+require_once __DIR__ . '/../vendor/autoload.php';
 
-$queryBedrock = new MinecraftBedrockStatus("mc.server-bedrock.loc");
+$status = new MinecraftBedrockStatus('mc.server-bedrock.loc');
 
 try {
-    print_r($queryBedrock->getInfo()); //Don't do it that way,
-} catch (NotConnectedException $e) {
-    echo $e->getMessage() . "\n<br>";
-}
+    $result = $status->fetch()->getResult();
 
-//Connection to the server
-try {
-    $queryBedrock->connect();
-} catch (ConnectionException $e) {
-    //When the server is probably offline
-    echo $e->getMessage() . "\n<br>";
-} catch (ReceiveStatusException $e) {
-    //When communication with the server failed
-    print_r($queryBedrock->getInfo()); //Return empty array
-    echo $e->getMessage() . "\n<br>";
-}
+    echo sprintf(
+        "Server %s:%d is online\n",
+        $status->getHost(),
+        $status->getPort()
+    );
+    echo sprintf("MOTD: %s\n", $result->motd());
+    echo sprintf("Players: %d/%d\n", $result->onlinePlayers(), $result->maxPlayers());
+    echo sprintf("Version: %s\n", $result->version ?? 'unknown');
+    echo sprintf("Protocol: %d\n", $result->protocol);
 
-if ($queryBedrock->isConnected()) {
-    echo sprintf("Server %s:%d is online", $queryBedrock->getHost(), $queryBedrock->getPort()) . "\n<br>";
-    print_r($queryBedrock->getInfo()); //When the array is empty, it probably failed to communicate properly with the server. Previously, a ReceiveStatusException exception was thrown
-} else {
-    echo sprintf("Server %s:%d is offline", $queryBedrock->getHost(), $queryBedrock->getPort()) . "\n<br>";
+    print_r($result->raw());
+} catch (ConnectionException $exception) {
+    echo "Connection failed: " . $exception->getMessage() . "\n";
+} catch (TimeoutException $exception) {
+    echo "Server read timed out: " . $exception->getMessage() . "\n";
+} catch (ProtocolException | InvalidResponseException $exception) {
+    echo "Invalid server response: " . $exception->getMessage() . "\n";
+} catch (ReceiveStatusException $exception) {
+    echo "Status could not be received: " . $exception->getMessage() . "\n";
 }
