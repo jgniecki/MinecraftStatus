@@ -14,6 +14,7 @@ use DevLancer\MinecraftStatus\Exception\InvalidResponseException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
 use DevLancer\MinecraftStatus\Exception\ProtocolException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
+use DevLancer\MinecraftStatus\Result\JavaQueryResult;
 
 class MinecraftJavaQuery extends AbstractStatus implements MinecraftJavaQueryInterface
 {
@@ -45,6 +46,18 @@ class MinecraftJavaQuery extends AbstractStatus implements MinecraftJavaQueryInt
     {
         parent::resetState();
         $this->players = [];
+    }
+
+    protected function createResult(): JavaQueryResult
+    {
+        return new JavaQueryResult(
+            $this->info,
+            (string)($this->info['hostname'] ?? ''),
+            (int)($this->info['numplayers'] ?? 0),
+            (int)($this->info['maxplayers'] ?? 0),
+            (string)($this->info['hostip'] ?? ''),
+            $this->players
+        );
     }
 
 
@@ -197,3 +210,4 @@ final class Query extends MinecraftJavaQuery
         parent::__construct($host, $port, $timeout, $resolveSRV);
     }
 }
+

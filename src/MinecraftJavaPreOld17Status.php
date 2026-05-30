@@ -14,6 +14,7 @@ use DevLancer\MinecraftStatus\Exception\InvalidResponseException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
 use DevLancer\MinecraftStatus\Exception\ProtocolException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
+use DevLancer\MinecraftStatus\Result\LegacyJavaStatusResult;
 
 class MinecraftJavaPreOld17Status extends AbstractStatus implements ProtocolInterface
 {
@@ -65,6 +66,22 @@ class MinecraftJavaPreOld17Status extends AbstractStatus implements ProtocolInte
     public function getMotd(): string
     {
         return $this->getInfo()['description']['text'] ?? "";
+    }
+
+    protected function createResult(): LegacyJavaStatusResult
+    {
+        $description = $this->info['description'] ?? [];
+        $players = $this->info['players'] ?? [];
+        $version = $this->info['version'] ?? [];
+
+        return new LegacyJavaStatusResult(
+            $this->info,
+            (string)(is_array($description) ? ($description['text'] ?? '') : ''),
+            (int)(is_array($players) ? ($players['online'] ?? 0) : 0),
+            (int)(is_array($players) ? ($players['max'] ?? 0) : 0),
+            (int)(is_array($version) ? ($version['protocol'] ?? 0) : 0),
+            is_array($version) && isset($version['name']) ? (string)$version['name'] : null
+        );
     }
 
     /**
@@ -156,3 +173,4 @@ final class PingPreOld17 extends MinecraftJavaPreOld17Status
         parent::__construct($host, $port, $timeout, $resolveSRV);
     }
 }
+

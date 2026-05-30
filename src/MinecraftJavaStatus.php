@@ -15,6 +15,7 @@ use DevLancer\MinecraftStatus\Exception\NotConnectedException;
 use DevLancer\MinecraftStatus\Exception\ProtocolException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
 use DevLancer\MinecraftStatus\Exception\TimeoutException;
+use DevLancer\MinecraftStatus\Result\JavaStatusResult;
 
 class MinecraftJavaStatus extends AbstractStatus implements PlayerListInterface, FaviconInterface, DelayInterface, ProtocolInterface
 {
@@ -76,6 +77,25 @@ class MinecraftJavaStatus extends AbstractStatus implements PlayerListInterface,
     public function getDelay(): int
     {
         return $this->delay;
+    }
+
+    protected function createResult(): JavaStatusResult
+    {
+        $motd = $this->info['description'] ?? '';
+        $version = $this->info['version'] ?? [];
+        $players = $this->info['players'] ?? [];
+
+        return new JavaStatusResult(
+            $this->info,
+            is_array($motd) ? (string)json_encode($motd) : (string)$motd,
+            (int)(is_array($players) ? ($players['online'] ?? 0) : 0),
+            (int)(is_array($players) ? ($players['max'] ?? 0) : 0),
+            (int)(is_array($version) ? ($version['protocol'] ?? 0) : 0),
+            is_array($version) && isset($version['name']) ? (string)$version['name'] : null,
+            (string)($this->info['favicon'] ?? ''),
+            $this->delay,
+            $this->players
+        );
     }
 
     /**
@@ -239,3 +259,4 @@ final class Ping extends MinecraftJavaStatus
         parent::__construct($host, $port, $timeout, $resolveSRV);
     }
 }
+

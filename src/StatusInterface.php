@@ -9,6 +9,8 @@
 
 namespace DevLancer\MinecraftStatus;
 
+use DevLancer\MinecraftStatus\Result\StatusResultInterface;
+
 /**
  * Interface StatusInterface
  * @package DevLancer\MinecraftStatus
@@ -70,4 +72,11 @@ interface StatusInterface
      * @return array<string, mixed>
      */
     public function getInfo(): array;
+
+    /**
+     * Returns the typed status result.
+     *
+     * @return StatusResultInterface
+     */
+    public function getResult(): StatusResultInterface;
 }

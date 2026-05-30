@@ -13,6 +13,7 @@ use DevLancer\MinecraftStatus\Exception\ConnectionException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
 use DevLancer\MinecraftStatus\Exception\ProtocolException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
+use DevLancer\MinecraftStatus\Result\BedrockStatusResult;
 use InvalidArgumentException;
 
 class MinecraftBedrockStatus extends AbstractStatus implements ProtocolInterface
@@ -50,6 +51,23 @@ class MinecraftBedrockStatus extends AbstractStatus implements ProtocolInterface
     public function getProtocol(): int
     {
         return $this->getInfo()['protocol'];
+    }
+
+    protected function createResult(): BedrockStatusResult
+    {
+        return new BedrockStatusResult(
+            $this->info,
+            (string)($this->info['hostname'] ?? ''),
+            (int)($this->info['numplayers'] ?? 0),
+            (int)($this->info['maxplayers'] ?? 0),
+            (int)($this->info['protocol'] ?? 0),
+            isset($this->info['version']) ? (string)$this->info['version'] : null,
+            isset($this->info['game_mode']) ? (string)$this->info['game_mode'] : null,
+            isset($this->info['map']) ? (string)$this->info['map'] : null,
+            isset($this->info['server_id']) ? (string)$this->info['server_id'] : null,
+            (int)($this->info['ipv4port'] ?? 0),
+            (int)($this->info['ipv6port'] ?? 0)
+        );
     }
 
     /**
@@ -179,3 +197,4 @@ final class QueryBedrock extends MinecraftBedrockStatus
         parent::__construct($host, $port, $timeout, $resolveSRV);
     }
 }
+

@@ -12,6 +12,8 @@ use DevLancer\MinecraftStatus\Dns\SrvResolver;
 use DevLancer\MinecraftStatus\Exception\ConnectionException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
+use DevLancer\MinecraftStatus\Result\GenericStatusResult;
+use DevLancer\MinecraftStatus\Result\StatusResultInterface;
 use InvalidArgumentException;
 use Throwable;
 
@@ -43,6 +45,8 @@ abstract class AbstractStatus implements StatusInterface
      * @var array<string, mixed>
      */
     protected array $info = [];
+
+    protected ?StatusResultInterface $result = null;
 
     protected StatusState $statusState = StatusState::Idle;
 
@@ -113,6 +117,7 @@ abstract class AbstractStatus implements StatusInterface
         try {
             $openConnection();
             $this->getStatus();
+            $this->result = $this->createResult();
             $this->statusState = StatusState::Fetched;
         } catch (Throwable $exception) {
             $this->resetState();
@@ -134,6 +139,7 @@ abstract class AbstractStatus implements StatusInterface
     protected function resetState(): void
     {
         $this->info = [];
+        $this->result = null;
     }
 
     /**
@@ -180,6 +186,31 @@ abstract class AbstractStatus implements StatusInterface
         $this->assertFetched();
 
         return $this->info;
+    }
+
+    /**
+     * @inheritDoc
+     * @throws NotConnectedException
+     */
+    public function getResult(): StatusResultInterface
+    {
+        $this->assertFetched();
+
+        if ($this->result === null) {
+            throw new NotConnectedException('The status has not been fetched.');
+        }
+
+        return $this->result;
+    }
+
+    protected function createResult(): StatusResultInterface
+    {
+        return new GenericStatusResult(
+            $this->info,
+            (string)($this->info['motd'] ?? ''),
+            (int)($this->info['players']['online'] ?? $this->info['numplayers'] ?? 0),
+            (int)($this->info['players']['max'] ?? $this->info['maxplayers'] ?? 0)
+        );
     }
 
     /**
@@ -248,7 +279,7 @@ abstract class AbstractStatus implements StatusInterface
      */
     protected function _connect(string $host, int $port): void
     {
-        $socket = @fsockopen($host, $port, $err_no, $err_str, (float)$this->timeout);
+        $socket = @fsockopen($host, $port, $err_no, $err_str, $this->timeout);
 
         if ($err_no || !is_resource($socket)) {
             throw new ConnectionException('Failed to connect or create a socket: ' . $err_str);
