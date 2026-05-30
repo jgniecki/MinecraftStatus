@@ -129,7 +129,7 @@ final class PingPreOld17 extends MinecraftJavaPreOld17Status
     /**
      * @deprecated Since version 3.1. Please use class DevLancer\MinecraftStatus\MinecraftJavaPreOld17Status instead.
      */
-    public function __construct(string $host, int $port = 25565, int $timeout = 3, bool $resolveSRV = true)
+    public function __construct(string $host, int $port = 25565, int|float $timeout = 3, bool $resolveSRV = true)
     {
         trigger_error(
             sprintf('Class %s is deprecated and will be removed in future versions. Please use class %s instead.', __CLASS__, MinecraftJavaPreOld17Status::class),

@@ -55,9 +55,9 @@ interface StatusInterface
 
     /**
      * Sets the time to get resources
-     * @param int $timeout
+     * @param int|float $timeout
      */
-    public function setTimeout(int $timeout): void;
+    public function setTimeout(int|float $timeout): void;
 
     /**
      * Gets server motd

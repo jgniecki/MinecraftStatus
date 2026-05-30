@@ -33,10 +33,7 @@ abstract class AbstractStatus implements StatusInterface
      */
     protected int $port;
 
-    /**
-     * @var int
-     */
-    protected int $timeout;
+    protected float $timeout;
 
     /**
      * @var bool
@@ -58,11 +55,11 @@ abstract class AbstractStatus implements StatusInterface
     /**
      * @param string $host
      * @param int $port
-     * @param int $timeout
+     * @param int|float $timeout
      * @param bool $resolveSRV
-     * @throws InvalidArgumentException The $timeout must be a positive integer
+     * @throws InvalidArgumentException The $timeout must be greater than zero
      */
-    public function __construct(string $host, int $port = 25565, int $timeout = 3, bool $resolveSRV = true)
+    public function __construct(string $host, int $port = 25565, int|float $timeout = 3, bool $resolveSRV = true)
     {
         $this->resolveSRV = $resolveSRV;
 
@@ -198,24 +195,24 @@ abstract class AbstractStatus implements StatusInterface
     }
 
     /**
-     * @return int
+     * @return float
      */
-    public function getTimeout(): int
+    public function getTimeout(): float
     {
         return $this->timeout;
     }
 
     /**
      * @inheritDoc
-     * @throws InvalidArgumentException The timeout must be a positive integer.
+     * @throws InvalidArgumentException The timeout must be greater than zero.
      */
-    public function setTimeout(int $timeout): void
+    public function setTimeout(int|float $timeout): void
     {
         if ($timeout <= 0) {
-            throw new InvalidArgumentException("The timeout must be a positive integer.");
+            throw new InvalidArgumentException("The timeout must be greater than zero.");
         }
 
-        $this->timeout = $timeout;
+        $this->timeout = (float)$timeout;
     }
 
     /**
@@ -254,7 +251,15 @@ abstract class AbstractStatus implements StatusInterface
         }
 
         $this->socket = $socket;
-        stream_set_timeout($this->socket, $this->timeout);
+        $this->applyStreamTimeout();
+    }
+
+    protected function applyStreamTimeout(): void
+    {
+        $seconds = (int)floor($this->timeout);
+        $microseconds = (int)round(($this->timeout - $seconds) * 1_000_000);
+
+        stream_set_timeout($this->socket, $seconds, $microseconds);
     }
 
     /**
