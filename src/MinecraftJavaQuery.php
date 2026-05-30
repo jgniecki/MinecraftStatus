@@ -24,7 +24,6 @@ class MinecraftJavaQuery extends AbstractStatus implements MinecraftJavaQueryInt
 
     /**
      * @inheritDoc
-     * @return MinecraftJavaQuery
      * @throws ConnectionException Thrown when failed to connect to resource
      * @throws ReceiveStatusException Thrown when the status has not been obtained or resolved
      */

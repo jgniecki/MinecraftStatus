@@ -40,7 +40,7 @@
     },
     "scripts": {
         "test": "phpunit",
-        "analyse": "phpstan analyse src tests",
+        "analyse": "phpstan analyse -c phpstan.neon",
         "cs-check": "php-cs-fixer fix --dry-run --diff",
         "qa": [
             "@cs-check",
