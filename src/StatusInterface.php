@@ -26,9 +26,10 @@ interface StatusInterface
 
     /**
      * Attempts to connect to the given host.
-     * @return StatusInterface
+     *
+     * @return static
      */
-    public function connect(): StatusInterface;
+    public function connect(): static;
 
     /**
      * Returns the current lifecycle state of the last status fetch.

@@ -9,7 +9,6 @@
 
 namespace DevLancer\MinecraftStatus;
 
-use DevLancer\MinecraftStatus\Exception\ConnectionException;
 use DevLancer\MinecraftStatus\Exception\InvalidResponseException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
 use DevLancer\MinecraftStatus\Exception\ProtocolException;
@@ -18,18 +17,6 @@ use DevLancer\MinecraftStatus\Result\LegacyJavaStatusResult;
 
 class MinecraftJavaPreOld17Status extends AbstractStatus implements ProtocolInterface
 {
-    /**
-     * @inheritDoc
-     * @return MinecraftJavaPreOld17Status
-     * @throws ConnectionException Thrown when failed to connect to resource
-     * @throws ReceiveStatusException Thrown when the status has not been obtained or resolved
-     */
-    public function connect(): StatusInterface
-    {
-        parent::connect();
-        return $this;
-    }
-
     /**
      * @return int
      * @throws NotConnectedException

@@ -42,12 +42,6 @@ class MinecraftBedrockStatus extends AbstractStatus implements ProtocolInterface
         });
     }
 
-    public function connect(): StatusInterface
-    {
-        $this->fetch();
-        return $this;
-    }
-
     public function getProtocol(): int
     {
         return $this->getInfo()['protocol'];

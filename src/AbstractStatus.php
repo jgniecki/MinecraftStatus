@@ -90,7 +90,7 @@ abstract class AbstractStatus implements StatusInterface
         });
     }
 
-    public function connect(): StatusInterface
+    public function connect(): static
     {
         return $this->fetch();
     }

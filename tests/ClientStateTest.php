@@ -5,6 +5,8 @@ namespace DevLancer\MinecraftStatus\Tests;
 use DevLancer\MinecraftStatus\AbstractStatus;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
+use DevLancer\MinecraftStatus\MinecraftBedrockStatus;
+use DevLancer\MinecraftStatus\MinecraftJavaPreOld17Status;
 use DevLancer\MinecraftStatus\MinecraftJavaQuery;
 use DevLancer\MinecraftStatus\MinecraftJavaStatus;
 use DevLancer\MinecraftStatus\StatusState;
@@ -35,6 +37,34 @@ final class ClientStateTest extends TestCase
         self::assertSame($client, $client->connect());
         self::assertSame(StatusState::Fetched, $client->status());
         self::assertSame(1, $client->connectCount);
+    }
+
+    public function testJavaStatusConnectAllowsChainingSpecificMethods(): void
+    {
+        $client = new JavaStatusDouble();
+
+        self::assertSame('test-icon', $client->connect()->getFavicon());
+    }
+
+    public function testJavaQueryConnectAllowsChainingSpecificMethods(): void
+    {
+        $client = new JavaQueryDouble();
+
+        self::assertSame(['Steve'], $client->connect()->getPlayers());
+    }
+
+    public function testBedrockConnectAllowsChainingSpecificMethods(): void
+    {
+        $client = new BedrockStatusDouble();
+
+        self::assertSame(671, $client->connect()->getProtocol());
+    }
+
+    public function testLegacyJavaConnectAllowsChainingSpecificMethods(): void
+    {
+        $client = new LegacyJavaStatusDouble();
+
+        self::assertSame(47, $client->connect()->getProtocol());
     }
 
     public function testInfoBeforeFetchThrowsNotConnectedException(): void
@@ -208,7 +238,7 @@ final class JavaStatusDouble extends MinecraftJavaStatus
             throw new ReceiveStatusException('Failed to receive status.');
         }
 
-        $this->info = ['players' => ['online' => 1, 'max' => 20]];
+        $this->info = ['players' => ['online' => 1, 'max' => 20], 'favicon' => 'test-icon'];
         $this->players = ['Steve'];
     }
 }
@@ -240,5 +270,54 @@ final class JavaQueryDouble extends MinecraftJavaQuery
         }
 
         $this->info = ['hostname' => 'query'];
+        $this->players = ['Steve'];
+    }
+}
+
+final class BedrockStatusDouble extends MinecraftBedrockStatus
+{
+    public function __construct()
+    {
+        parent::__construct('example.org', 19132, 3, false);
+    }
+
+    protected function _connect(string $host, int $port): void
+    {
+        $socket = fopen('php://memory', 'r+');
+
+        if ($socket === false) {
+            throw new ReceiveStatusException('Failed to open test socket.');
+        }
+
+        $this->socket = $socket;
+    }
+
+    protected function getStatus(): void
+    {
+        $this->info = ['protocol' => 671];
+    }
+}
+
+final class LegacyJavaStatusDouble extends MinecraftJavaPreOld17Status
+{
+    public function __construct()
+    {
+        parent::__construct('example.org', 25565, 3, false);
+    }
+
+    protected function _connect(string $host, int $port): void
+    {
+        $socket = fopen('php://memory', 'r+');
+
+        if ($socket === false) {
+            throw new ReceiveStatusException('Failed to open test socket.');
+        }
+
+        $this->socket = $socket;
+    }
+
+    protected function getStatus(): void
+    {
+        $this->info = ['version' => ['protocol' => 47]];
     }
 }

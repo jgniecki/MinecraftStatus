@@ -36,12 +36,6 @@ class MinecraftJavaQuery extends AbstractStatus implements MinecraftJavaQueryInt
         });
     }
 
-    public function connect(): StatusInterface
-    {
-        $this->fetch();
-        return $this;
-    }
-
     protected function resetState(): void
     {
         parent::resetState();
