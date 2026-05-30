@@ -47,9 +47,9 @@ interface StatusInterface
 
     /**
      * Gets server motd
-     * @return string|array
+     * @return string
      */
-    public function getMotd();
+    public function getMotd(): string;
 
     /**
      * Returns the obtained host information
