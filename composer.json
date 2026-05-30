@@ -39,7 +39,8 @@
         "phpunit/phpunit": "^10.5"
     },
     "scripts": {
-        "test": "phpunit",
+        "test": "phpunit --exclude-group real-server",
+        "test-real": "phpunit --group real-server",
         "analyse": "phpstan analyse -c phpstan.neon",
         "cs-check": "php-cs-fixer fix --dry-run --diff",
         "qa": [

@@ -4,5 +4,6 @@ composer.phar
 /.phpdoc
 /.php-cs-fixer.cache
 /.phpunit.cache/
+/.servers-list.php
 Dockerfile
 docker-compose.yml
