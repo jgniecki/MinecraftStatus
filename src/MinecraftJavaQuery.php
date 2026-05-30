@@ -10,10 +10,10 @@
 namespace DevLancer\MinecraftStatus;
 
 use DevLancer\MinecraftStatus\Exception\ConnectionException;
-use DevLancer\MinecraftStatus\Exception\InvalidResponseException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
 use DevLancer\MinecraftStatus\Exception\ProtocolException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
+use DevLancer\MinecraftStatus\Parser\JavaQueryParser;
 use DevLancer\MinecraftStatus\Result\JavaQueryResult;
 
 class MinecraftJavaQuery extends AbstractStatus implements MinecraftJavaQueryInterface
@@ -80,24 +80,9 @@ class MinecraftJavaQuery extends AbstractStatus implements MinecraftJavaQueryInt
             throw new ProtocolException('Failed to receive status.');
         }
 
-        $data = substr($data, 11);
-        $data = explode("\x00\x00\x01player_\x00\x00", $data);
-
-        if (count($data) !== 2) {
-            throw new InvalidResponseException('Failed to parse server\'s response.');
-        }
-
-        if (is_string($data[1])) {
-            $this->players = $this->resolvePlayerList($data[1]);
-        }
-
-        $data = explode("\x00", $data[0]);
-        $info = [];
-        for ($i = 1; $i < count($data); $i += 2) {
-            $info[$data[$i - 1]] = $data[$i];
-        }
-
-        $this->info = $this->encoding($info);
+        $result = $this->createJavaQueryParser()->parse($data);
+        $this->players = $this->encoding($result['players']);
+        $this->info = $this->encoding($result['info']);
         $this->info['hostip'] = gethostbyname($this->host);
     }
 
@@ -107,9 +92,12 @@ class MinecraftJavaQuery extends AbstractStatus implements MinecraftJavaQueryInt
      */
     protected function resolvePlayerList(string $data): array
     {
-        $players = substr($data, 0, -2);
-        $players = explode("\x00", $players);
-        return $this->encoding($players);
+        return $this->encoding($this->createJavaQueryParser()->resolvePlayerList($data));
+    }
+
+    protected function createJavaQueryParser(): JavaQueryParser
+    {
+        return new JavaQueryParser();
     }
 
     /**

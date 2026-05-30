@@ -9,11 +9,11 @@
 
 namespace DevLancer\MinecraftStatus;
 
-use DevLancer\MinecraftStatus\Exception\InvalidResponseException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
 use DevLancer\MinecraftStatus\Exception\ProtocolException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
 use DevLancer\MinecraftStatus\Exception\TimeoutException;
+use DevLancer\MinecraftStatus\Parser\JavaStatusParser;
 use DevLancer\MinecraftStatus\Result\JavaStatusResult;
 
 class MinecraftJavaStatus extends AbstractStatus implements PlayerListInterface, FaviconInterface, DelayInterface, ProtocolInterface
@@ -165,18 +165,9 @@ class MinecraftJavaStatus extends AbstractStatus implements PlayerListInterface,
 
             $data .= $block;
         } while (strlen($data) < $length);
-        $result = json_decode($data, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new InvalidResponseException('JSON parsing failed: ' . json_last_error_msg());
-        }
-
-        if (!is_array($result)) {
-            throw new InvalidResponseException('The server did not return the information');
-        }
-
-        $result = $this->encoding($result);
-        $this->players = $this->resolvePlayerList($result);
-        $this->info = $result;
+        $result = $this->createJavaStatusParser()->parse($data);
+        $this->info = $this->encoding($result['info']);
+        $this->players = $this->encoding($result['players']);
     }
 
     /**
@@ -185,14 +176,12 @@ class MinecraftJavaStatus extends AbstractStatus implements PlayerListInterface,
      */
     protected function resolvePlayerList(array $data): array
     {
-        $players = [];
-        if (isset($data['players']['sample'])) {
-            foreach ($data['players']['sample'] as $value) {
-                $players[] = $value;
-            }
-        }
+        return $this->createJavaStatusParser()->resolvePlayerList($data);
+    }
 
-        return $players;
+    protected function createJavaStatusParser(): JavaStatusParser
+    {
+        return new JavaStatusParser();
     }
 
 

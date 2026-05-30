@@ -13,6 +13,7 @@ use DevLancer\MinecraftStatus\Exception\InvalidResponseException;
 use DevLancer\MinecraftStatus\Exception\NotConnectedException;
 use DevLancer\MinecraftStatus\Exception\ProtocolException;
 use DevLancer\MinecraftStatus\Exception\ReceiveStatusException;
+use DevLancer\MinecraftStatus\Parser\LegacyJavaStatusParser;
 use DevLancer\MinecraftStatus\Result\LegacyJavaStatusResult;
 
 class MinecraftJavaPreOld17Status extends AbstractStatus implements ProtocolInterface
@@ -85,37 +86,7 @@ class MinecraftJavaPreOld17Status extends AbstractStatus implements ProtocolInte
             throw new ReceiveStatusException('Failed to receive status.');
         }
 
-        $this->validateLegacyPacket($data);
-
-        $data = substr($data, 3); // Strip packet header (kick message packet and short length)
-        $data = $this->decodeLegacyPayload($data);
-
-        // Are we dealing with Minecraft 1.4+ server?
-        if ($data[1] === "\xA7" && $data[2] === "\x31") {
-            $data = explode("\x00", $data);
-            $result['description']['text'] = $data[3] ?? null;
-            $result['players'] = [
-                "max" => (int)($data[5] ?? 0),
-                "online" => (int)($data[4] ?? 0),
-            ];
-
-            $result['version'] = [
-                'name' => $data[2] ?? null,
-                'protocol' => (int)($data[1] ?? 0)
-            ];
-
-            $this->info = $this->encoding($result);
-            return;
-        }
-
-        $data = explode("\xA7", $data);
-        $result['description']['text'] = substr($data[0], 0, -1);
-        $result['players'] = [
-            "max" => (int)($data[2] ?? 0),
-            "online" => (int)($data[1] ?? 0),
-        ];
-
-        $this->info = $this->encoding($result);
+        $this->info = $this->encoding($this->createLegacyJavaStatusParser()->parse($data));
     }
 
     /**
@@ -123,9 +94,7 @@ class MinecraftJavaPreOld17Status extends AbstractStatus implements ProtocolInte
      */
     protected function validateLegacyPacket(string $data): void
     {
-        if ($data === '' || strlen($data) < 4 || $data[0] !== "\xFF") {
-            throw new ProtocolException('Failed to receive status.');
-        }
+        $this->createLegacyJavaStatusParser()->validateLegacyPacket($data);
     }
 
     /**
@@ -133,13 +102,12 @@ class MinecraftJavaPreOld17Status extends AbstractStatus implements ProtocolInte
      */
     protected function decodeLegacyPayload(string $data): string
     {
-        $decoded = @iconv('UTF-16BE', 'UTF-8', $data);
+        return $this->createLegacyJavaStatusParser()->decodeLegacyPayload($data);
+    }
 
-        if ($decoded === false) {
-            throw new InvalidResponseException('Failed to receive status.');
-        }
-
-        return $decoded;
+    protected function createLegacyJavaStatusParser(): LegacyJavaStatusParser
+    {
+        return new LegacyJavaStatusParser();
     }
 }
 
