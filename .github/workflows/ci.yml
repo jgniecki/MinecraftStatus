@@ -20,7 +20,7 @@ jobs:
       with:
         php-version: ${{ matrix.php }}
         extensions: mbstring, json, iconv, dom, xml, xmlwriter
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
 
     - name: Install dependencies
       run: composer install --no-interaction --no-progress
